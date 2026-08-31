@@ -1,0 +1,6 @@
+{
+  "name": "AppStore Screenshot Studio",
+  "description": "Professional iOS App Store screenshot generator with device mockups, customizable layouts, AI copy optimization, and one-click exact resolution export.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
