@@ -12,6 +12,7 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { SlideItem, AIPitchDeckResponse, AICopyVariation } from '../types';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface AICopyAssistantProps {
   slides: SlideItem[];
@@ -31,19 +32,22 @@ export const AICopyAssistant: React.FC<AICopyAssistantProps> = ({
   onApplyDeckCopy,
   onApplySlideCopy,
 }) => {
+  const { t, language: uiLanguage } = useLanguage();
   const currentSlide = slides[activeSlideIndex] || slides[0];
 
-  // Mode: 'full-deck' | 'slide-variations' | 'localize' | 'audit'
+  // Mode: 'full-deck' | 'slide-variations' | 'localize'
   const [activeTab, setActiveTab] = useState<'full-deck' | 'slide-variations' | 'localize'>('slide-variations');
 
   // Full Deck Form State
   const [appName, setAppName] = useState('My iOS App');
   const [appCategory, setAppCategory] = useState('Productivity & Utilities');
   const [appDescription, setAppDescription] = useState(
-    '極簡高效率任務管理工具，AI 智慧排程與團隊即時同步'
+    uiLanguage === 'en'
+      ? 'Minimalist high-efficiency task manager with AI smart scheduling and real-time team sync'
+      : '極簡高效率任務管理工具，AI 智慧排程與團隊即時同步'
   );
   const [tone, setTone] = useState<'apple-minimal' | 'bold-action' | 'problem-solution' | 'social-proof'>('apple-minimal');
-  const [language, setLanguage] = useState<'zh-TW' | 'en' | 'ja'>('zh-TW');
+  const [language, setLanguage] = useState<'zh-TW' | 'en' | 'ja'>(uiLanguage === 'en' ? 'en' : 'zh-TW');
 
   // Loading & Data States
   const [loadingDeck, setLoadingDeck] = useState(false);
@@ -76,11 +80,11 @@ export const AICopyAssistant: React.FC<AICopyAssistantProps> = ({
         }),
       });
       const data = await res.json();
-      if (!data.success) throw new Error(data.error || '生成失敗');
+      if (!data.success) throw new Error(data.error || (uiLanguage === 'en' ? 'Generation failed' : '生成失敗'));
       setDeckResult(data.data);
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.message || '無法連線至 AI 建議引擎，請稍後再試');
+      setErrorMsg(err.message || (uiLanguage === 'en' ? 'Unable to connect to AI engine. Please try again.' : '無法連線至 AI 建議引擎，請稍後再試'));
     } finally {
       setLoadingDeck(false);
     }
@@ -99,16 +103,16 @@ export const AICopyAssistant: React.FC<AICopyAssistantProps> = ({
           category: appCategory,
           currentHeadline: currentSlide?.textConfig?.headlineText || '',
           currentSubtitle: currentSlide?.textConfig?.subtitleText || '',
-          featureContext: currentSlide?.name || '核心功能展示',
+          featureContext: currentSlide?.name || (uiLanguage === 'en' ? 'Core Feature Showcase' : '核心功能展示'),
           language,
         }),
       });
       const data = await res.json();
-      if (!data.success) throw new Error(data.error || '生成失敗');
+      if (!data.success) throw new Error(data.error || (uiLanguage === 'en' ? 'Generation failed' : '生成失敗'));
       setVariations(data.data.variations || []);
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.message || '無法生成文案變體');
+      setErrorMsg(err.message || (uiLanguage === 'en' ? 'Unable to generate copy variations' : '無法生成文案變體'));
     } finally {
       setLoadingVariations(false);
     }
@@ -135,11 +139,11 @@ export const AICopyAssistant: React.FC<AICopyAssistantProps> = ({
         }),
       });
       const data = await res.json();
-      if (!data.success) throw new Error(data.error || '翻譯在地化失敗');
+      if (!data.success) throw new Error(data.error || (uiLanguage === 'en' ? 'Localization failed' : '翻譯在地化失敗'));
       setLocalizedResults(data.data.localizedSets || []);
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.message || '在地化服務暫時無法使用');
+      setErrorMsg(err.message || (uiLanguage === 'en' ? 'Localization service unavailable' : '在地化服務暫時無法使用'));
     } finally {
       setLoadingLocalize(false);
     }
@@ -148,7 +152,6 @@ export const AICopyAssistant: React.FC<AICopyAssistantProps> = ({
   // Quick ASO Glance-Test Score Analysis
   const headlineLen = currentSlide?.textConfig?.headlineText?.length || 0;
   const isGoodLength = language === 'zh-TW' ? headlineLen >= 4 && headlineLen <= 24 : headlineLen >= 10 && headlineLen <= 45;
-  const hasBadge = !!currentSlide?.textConfig?.badgeText && currentSlide?.textConfig?.showBadge;
   const hasSubtitle = !!currentSlide?.textConfig?.subtitleText && currentSlide?.textConfig?.showSubtitle;
 
   return (
@@ -160,8 +163,8 @@ export const AICopyAssistant: React.FC<AICopyAssistantProps> = ({
             <Sparkles className="w-4 h-4 text-white" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-neutral-100">AI 標題與 ASO 轉換率優化</h3>
-            <p className="text-xs text-neutral-400">Gemini 2.5 驅動之高點擊率文案策略</p>
+            <h3 className="text-sm font-bold text-neutral-100">{t.aiAssistantTitle}</h3>
+            <p className="text-xs text-neutral-400">{t.aiAssistantDesc}</p>
           </div>
         </div>
 
@@ -169,12 +172,12 @@ export const AICopyAssistant: React.FC<AICopyAssistantProps> = ({
         <select
           value={language}
           onChange={(e) => setLanguage(e.target.value as any)}
-          aria-label="選擇文案語言"
+          aria-label="Select copywriting language"
           className="bg-[#121217] border border-white/[0.1] text-xs rounded-xl px-2.5 py-1.5 text-neutral-200 focus:outline-hidden focus:border-blue-500 cursor-pointer"
         >
-          <option value="zh-TW">繁體中文 (台灣/香港)</option>
+          <option value="zh-TW">繁體中文 (TW/HK)</option>
           <option value="en">English (US/Global)</option>
-          <option value="ja">日本語 (Japan App Store)</option>
+          <option value="ja">日本語 (Japan)</option>
         </select>
       </div>
 
@@ -189,7 +192,7 @@ export const AICopyAssistant: React.FC<AICopyAssistantProps> = ({
           }`}
         >
           <Zap className="w-3.5 h-3.5" />
-          當前頁變體
+          {t.tabSlideVariations}
         </button>
         <button
           onClick={() => setActiveTab('full-deck')}
@@ -200,7 +203,7 @@ export const AICopyAssistant: React.FC<AICopyAssistantProps> = ({
           }`}
         >
           <Layers className="w-3.5 h-3.5" />
-          全套故事線
+          {t.tabFullDeck}
         </button>
         <button
           onClick={() => setActiveTab('localize')}
@@ -211,7 +214,7 @@ export const AICopyAssistant: React.FC<AICopyAssistantProps> = ({
           }`}
         >
           <Languages className="w-3.5 h-3.5" />
-          多國語系
+          {t.tabLocalize}
         </button>
       </div>
 
@@ -228,15 +231,15 @@ export const AICopyAssistant: React.FC<AICopyAssistantProps> = ({
           <div className="p-3.5 bg-[#0F0F14]/70 rounded-2xl border border-white/[0.06] space-y-2.5">
             <div className="flex justify-between items-center text-xs text-neutral-400">
               <span className="font-semibold text-neutral-300">
-                編輯中：Slide {activeSlideIndex + 1} ({currentSlide?.name})
+                {t.editingSlide} {activeSlideIndex + 1} ({currentSlide?.name})
               </span>
               <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-950/80 text-blue-300 border border-blue-800/40 font-semibold">
-                ASO 評估：{isGoodLength && hasSubtitle ? '🌟 95+ 絕佳' : '⚡ 建議優化'}
+                ASO: {isGoodLength && hasSubtitle ? (uiLanguage === 'en' ? '🌟 95+ Great' : '🌟 95+ 絕佳') : (uiLanguage === 'en' ? '⚡ Can Optimize' : '⚡ 建議優化')}
               </span>
             </div>
             <div className="text-xs bg-[#13131A] p-2.5 rounded-xl border border-white/[0.06] text-neutral-300">
-              <span className="text-neutral-500 font-mono text-[10px] block">現有主標題：</span>
-              <p className="font-bold text-white mt-0.5">{currentSlide?.textConfig?.headlineText || '(無標題)'}</p>
+              <span className="text-neutral-500 font-mono text-[10px] block">{t.currentHeadlineLabel}</span>
+              <p className="font-bold text-white mt-0.5">{currentSlide?.textConfig?.headlineText || '(No headline)'}</p>
             </div>
 
             <button
@@ -247,12 +250,12 @@ export const AICopyAssistant: React.FC<AICopyAssistantProps> = ({
               {loadingVariations ? (
                 <>
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  AI 正在精煉高轉化文案...
+                  {t.generatingVariations}
                 </>
               ) : (
                 <>
                   <Sparkles className="w-3.5 h-3.5" />
-                  生成 4 種心理學角度的 App Store 文案
+                  {t.generateVariationsBtn}
                 </>
               )}
             </button>
@@ -262,8 +265,8 @@ export const AICopyAssistant: React.FC<AICopyAssistantProps> = ({
           {variations.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center justify-between text-xs text-neutral-400 px-1">
-                <span>點擊即可一鍵套用至當前頁：</span>
-                <span className="text-[11px] text-blue-400 font-semibold">4 個策略角度</span>
+                <span>{uiLanguage === 'en' ? 'Click to apply to active slide:' : '點擊即可一鍵套用至當前頁：'}</span>
+                <span className="text-[11px] text-blue-400 font-semibold">{variations.length} {uiLanguage === 'en' ? 'angles' : '個策略角度'}</span>
               </div>
 
               {variations.map((v, i) => (
@@ -277,7 +280,7 @@ export const AICopyAssistant: React.FC<AICopyAssistantProps> = ({
                     </span>
                     {v.badge && (
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 font-mono border border-emerald-800/40">
-                        標籤: {v.badge}
+                        {t.badgeText}: {v.badge}
                       </span>
                     )}
                   </div>
@@ -290,7 +293,7 @@ export const AICopyAssistant: React.FC<AICopyAssistantProps> = ({
                   </div>
 
                   <p className="text-[11px] text-neutral-400 italic bg-[#0A0A0E] p-2 rounded-xl border border-white/[0.04]">
-                    💡 ASO 策略：{v.rationale}
+                    💡 ASO: {v.rationale}
                   </p>
 
                   <button
@@ -304,12 +307,12 @@ export const AICopyAssistant: React.FC<AICopyAssistantProps> = ({
                     {copiedStatus === `applied-${i}` ? (
                       <>
                         <Check className="w-3.5 h-3.5 text-emerald-400" />
-                        已套用至 Slide {activeSlideIndex + 1}
+                        {uiLanguage === 'en' ? `Applied to Slide ${activeSlideIndex + 1}` : `已套用至 Slide ${activeSlideIndex + 1}`}
                       </>
                     ) : (
                       <>
                         <ArrowRight className="w-3.5 h-3.5" />
-                        套用此文案
+                        {t.applyCopy}
                       </>
                     )}
                   </button>
@@ -325,49 +328,49 @@ export const AICopyAssistant: React.FC<AICopyAssistantProps> = ({
         <div className="space-y-3.5">
           <div className="space-y-3 bg-[#0F0F14]/70 p-3.5 rounded-2xl border border-white/[0.06] text-xs">
             <div>
-              <label className="block text-neutral-300 font-semibold mb-1">App 名稱</label>
+              <label className="block text-neutral-300 font-semibold mb-1">{t.appNameLabel}</label>
               <input
                 type="text"
                 value={appName}
                 onChange={(e) => setAppName(e.target.value)}
                 className="w-full bg-[#13131A] border border-white/[0.1] rounded-xl px-3 py-1.5 text-white focus:border-blue-500 focus:outline-hidden"
-                placeholder="例如：WealthWise"
+                placeholder="WealthWise"
               />
             </div>
 
             <div>
-              <label className="block text-neutral-300 font-semibold mb-1">應用分類 (App Store Category)</label>
+              <label className="block text-neutral-300 font-semibold mb-1">{t.appCategoryLabel}</label>
               <input
                 type="text"
                 value={appCategory}
                 onChange={(e) => setAppCategory(e.target.value)}
                 className="w-full bg-[#13131A] border border-white/[0.1] rounded-xl px-3 py-1.5 text-white focus:border-blue-500 focus:outline-hidden"
-                placeholder="例如：Finance, Health & Fitness, AI Productivity"
+                placeholder="Finance, Health & Fitness, AI Productivity"
               />
             </div>
 
             <div>
-              <label className="block text-neutral-300 font-semibold mb-1">核心價值與特色亮點</label>
+              <label className="block text-neutral-300 font-semibold mb-1">{t.appDescLabel}</label>
               <textarea
                 value={appDescription}
                 onChange={(e) => setAppDescription(e.target.value)}
                 rows={3}
                 className="w-full bg-[#13131A] border border-white/[0.1] rounded-xl p-2.5 text-white focus:border-blue-500 focus:outline-hidden resize-none"
-                placeholder="簡述您的 App 解決什麼痛點、有什麼讓用戶非下載不可的殺手級功能..."
+                placeholder={uiLanguage === 'en' ? 'Describe key problem solved and core features...' : '簡述您的 App 解決什麼痛點、有什麼讓用戶非下載不可的殺手級功能...'}
               />
             </div>
 
             <div>
-              <label className="block text-neutral-300 font-semibold mb-1">品牌文風 (Copywriting Tone)</label>
+              <label className="block text-neutral-300 font-semibold mb-1">{t.toneLabel}</label>
               <select
                 value={tone}
                 onChange={(e) => setTone(e.target.value as any)}
-                className="w-full bg-[#13131A] border border-white/[0.1] rounded-xl px-3 py-1.5 text-white focus:border-blue-500 focus:outline-hidden"
+                className="w-full bg-[#13131A] border border-white/[0.1] rounded-xl px-3 py-1.5 text-white focus:border-blue-500 focus:outline-hidden cursor-pointer"
               >
-                <option value="apple-minimal">Apple 極簡高級風 (極短有力、優雅留白)</option>
-                <option value="bold-action">強烈動態行動風 (成果驅動、直擊痛點)</option>
-                <option value="problem-solution">痛點解方風 (立即消除用戶挫折感)</option>
-                <option value="social-proof">權威背書與好評風 (頂級評分、安全信賴)</option>
+                <option value="apple-minimal">{t.toneAppleMinimal}</option>
+                <option value="bold-action">{t.toneBoldAction}</option>
+                <option value="problem-solution">{t.toneProblemSolution}</option>
+                <option value="social-proof">{t.toneSocialProof}</option>
               </select>
             </div>
 
@@ -379,12 +382,12 @@ export const AICopyAssistant: React.FC<AICopyAssistantProps> = ({
               {loadingDeck ? (
                 <>
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  AI 正在規劃 App Store 截圖故事線...
+                  {t.generatingDeck}
                 </>
               ) : (
                 <>
                   <Sparkles className="w-3.5 h-3.5" />
-                  生成完整 {slides.length} 張截圖故事線 (Story Arc)
+                  {uiLanguage === 'en' ? `Generate Complete ${slides.length}-Slide Story Arc` : `生成完整 ${slides.length} 張截圖故事線 (Story Arc)`}
                 </>
               )}
             </button>
@@ -395,7 +398,7 @@ export const AICopyAssistant: React.FC<AICopyAssistantProps> = ({
             <div className="space-y-3">
               <div className="p-3 bg-blue-950/40 border border-blue-800/40 rounded-2xl text-xs space-y-1">
                 <span className="font-bold text-blue-300 flex items-center gap-1.5">
-                  <TrendingUp className="w-3.5 h-3.5" /> 策略總覽：
+                  <TrendingUp className="w-3.5 h-3.5" /> {uiLanguage === 'en' ? 'Strategy Summary:' : '策略總覽：'}
                 </span>
                 <p className="text-neutral-200">{deckResult.appStorylineSummary}</p>
               </div>
@@ -408,7 +411,7 @@ export const AICopyAssistant: React.FC<AICopyAssistantProps> = ({
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-neutral-300">
-                        Slide {s.slideIndex}：{s.featureFocus}
+                        Slide {s.slideIndex}: {s.featureFocus}
                       </span>
                       {s.badge && (
                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-950/80 text-blue-300 border border-blue-800/40 font-mono">
@@ -418,7 +421,7 @@ export const AICopyAssistant: React.FC<AICopyAssistantProps> = ({
                     </div>
                     <p className="font-bold text-white text-sm whitespace-pre-line">{s.headline}</p>
                     <p className="text-neutral-400">{s.subtitle}</p>
-                    <p className="text-[10px] text-neutral-500">🎯 ASO 依據：{s.asoTip}</p>
+                    <p className="text-[10px] text-neutral-500">🎯 ASO: {s.asoTip}</p>
                   </div>
                 ))}
               </div>
@@ -434,12 +437,12 @@ export const AICopyAssistant: React.FC<AICopyAssistantProps> = ({
                 {copiedStatus === 'deck-applied' ? (
                   <>
                     <Check className="w-4 h-4" />
-                    已成功一鍵套用至所有截圖！
+                    {uiLanguage === 'en' ? 'Successfully applied to all slides!' : '已成功一鍵套用至所有截圖！'}
                   </>
                 ) : (
                   <>
                     <Zap className="w-4 h-4" />
-                    一鍵套用全套文案至所有 Slide
+                    {t.applyAllDeckCopy}
                   </>
                 )}
               </button>
@@ -453,7 +456,7 @@ export const AICopyAssistant: React.FC<AICopyAssistantProps> = ({
         <div className="space-y-3.5 text-xs">
           <div className="p-3.5 bg-[#0F0F14]/70 rounded-2xl border border-white/[0.06] space-y-3">
             <p className="text-neutral-300">
-              支援一鍵將現有截圖文案在地化翻譯為全球主要 App Store 語系（保持高轉換率文法與用語習慣）：
+              {t.localizeDesc}
             </p>
 
             <div className="flex flex-wrap gap-2">
@@ -463,7 +466,7 @@ export const AICopyAssistant: React.FC<AICopyAssistantProps> = ({
                 className="py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold flex items-center gap-1.5 disabled:opacity-50 cursor-pointer shadow-md shadow-blue-950/50"
               >
                 <Languages className="w-3.5 h-3.5" />
-                {loadingLocalize ? '正在跨國在地化...' : '一鍵產生 美國 (EN) & 日本 (JA) 語系'}
+                {loadingLocalize ? t.localizing : t.localizeBtn}
               </button>
             </div>
           </div>
@@ -482,7 +485,7 @@ export const AICopyAssistant: React.FC<AICopyAssistantProps> = ({
                       }}
                       className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
                     >
-                      {copiedStatus === `loc-${i}` ? '已套用' : '套用此語系'}
+                      {copiedStatus === `loc-${i}` ? (uiLanguage === 'en' ? 'Applied' : '已套用') : t.applyLocale}
                     </button>
                   </div>
 

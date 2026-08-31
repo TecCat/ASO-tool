@@ -7,9 +7,11 @@ import { EditorSidebar } from './components/EditorSidebar';
 import { AICopyAssistant } from './components/AICopyAssistant';
 import { SlideThumbnailDeck } from './components/SlideThumbnailDeck';
 import { ExportModal } from './components/ExportModal';
+import { LanguageProvider, useLanguage } from './i18n/LanguageContext';
 import { Sparkles, Layers, Maximize2, Plus } from 'lucide-react';
 
-export default function App() {
+function AppContent() {
+  const { t, language } = useLanguage();
   // Initialize with the first rich sample preset (WealthWise Finance)
   const [slides, setSlides] = useState<SlideItem[]>(SAMPLE_PRESETS[0].slides);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
@@ -68,14 +70,14 @@ export default function App() {
     const newIndex = slides.length + 1;
     const newSlide: SlideItem = {
       id: `slide-${Date.now()}`,
-      name: `Slide ${newIndex}: 亮點展示`,
+      name: `Slide ${newIndex}: ${language === 'en' ? 'Showcase' : '亮點展示'}`,
       screenshotUrl: generateSampleMockupSvg('ai', (newIndex % 3) + 1),
       layout: 'text-top-phone-bottom',
       bgConfig: { ...currentSlide.bgConfig },
       textConfig: {
         ...currentSlide.textConfig,
-        headlineText: `強大功能 ${newIndex}\n直覺操作流暢無比`,
-        subtitleText: '專為 iOS 生態深度優化，極致速度體驗',
+        headlineText: language === 'en' ? `Powerful Feature ${newIndex}\nSmooth & Intuitive Experience` : `強大功能 ${newIndex}\n直覺操作流暢無比`,
+        subtitleText: language === 'en' ? 'Deeply optimized for iOS ecosystem with ultra-fast speed' : '專為 iOS 生態深度優化，極致速度體驗',
         badgeText: '★ PRO FEATURE',
         showBadge: true,
       },
@@ -92,7 +94,7 @@ export default function App() {
     const duplicated: SlideItem = {
       ...target,
       id: `slide-${Date.now()}`,
-      name: `${target.name} (複製)`,
+      name: `${target.name} (${language === 'en' ? 'Copy' : '複製'})`,
     };
     const nextSlides = [...slides];
     nextSlides.splice(index + 1, 0, duplicated);
@@ -239,7 +241,7 @@ export default function App() {
                     <span>
                       #{idx + 1} {slide.name}
                     </span>
-                    <span className="text-[10px] text-blue-400 font-semibold">點擊切換編輯</span>
+                    <span className="text-[10px] text-blue-400 font-semibold">{language === 'en' ? 'Click to Edit' : '點擊切換編輯'}</span>
                   </div>
                   <ScreenshotRenderer
                     slide={slide}
@@ -267,7 +269,9 @@ export default function App() {
                   {isTabletView ? 'iPad Pro 13" (2048 × 2732 px)' : 'iPhone 6.9" / 6.7" (1290 × 2796 px)'}
                 </span>
                 <span className="text-white/20">|</span>
-                <span className="text-neutral-400">即時高保真算圖</span>
+                <span className="text-neutral-400">
+                  {language === 'en' ? 'Live High-Fidelity Rendering' : '即時高保真算圖'}
+                </span>
               </div>
             </div>
           )}
@@ -305,5 +309,13 @@ export default function App() {
         activeSlideIndex={activeSlideIndex}
       />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <LanguageProvider>
+      <AppContent />
+    </LanguageProvider>
   );
 }

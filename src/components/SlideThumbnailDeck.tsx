@@ -2,6 +2,7 @@ import React from 'react';
 import { Plus, Copy, Trash2, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { SlideItem } from '../types';
 import { ScreenshotRenderer } from './ScreenshotRenderer';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface SlideThumbnailDeckProps {
   slides: SlideItem[];
@@ -22,16 +23,18 @@ export const SlideThumbnailDeck: React.FC<SlideThumbnailDeckProps> = ({
   onDeleteSlide,
   onMoveSlide,
 }) => {
+  const { t, language } = useLanguage();
+
   return (
     <div className="w-full bg-[#0A0A0C]/90 backdrop-blur-xl border-t border-white/[0.08] px-4 py-3 select-none">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
         {/* Left info */}
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-xs font-bold text-neutral-200">
-            截圖套組 ({slides.length} 張)
+            {language === 'en' ? `Screenshot Deck (${slides.length} slides)` : `截圖套組 (${slides.length} 張)`}
           </span>
           <span className="text-[10px] text-neutral-400 hidden sm:inline">
-            • App Store 建議提供 3 ~ 10 張
+            • {t.deckHint}
           </span>
         </div>
 
@@ -81,7 +84,7 @@ export const SlideThumbnailDeck: React.FC<SlideThumbnailDeckProps> = ({
                         e.stopPropagation();
                         onMoveSlide(idx, idx - 1);
                       }}
-                      title="往左移"
+                      title={t.moveLeft}
                       className="p-1 hover:bg-white/[0.1] text-neutral-400 hover:text-white rounded-lg cursor-pointer"
                     >
                       <ChevronLeft className="w-3 h-3" />
@@ -94,7 +97,7 @@ export const SlideThumbnailDeck: React.FC<SlideThumbnailDeckProps> = ({
                         e.stopPropagation();
                         onMoveSlide(idx, idx + 1);
                       }}
-                      title="往右移"
+                      title={t.moveRight}
                       className="p-1 hover:bg-white/[0.1] text-neutral-400 hover:text-white rounded-lg cursor-pointer"
                     >
                       <ChevronRight className="w-3 h-3" />
@@ -106,7 +109,7 @@ export const SlideThumbnailDeck: React.FC<SlideThumbnailDeckProps> = ({
                       e.stopPropagation();
                       onDuplicateSlide(idx);
                     }}
-                    title="複製此頁"
+                    title={t.duplicateSlide}
                     className="p-1 hover:bg-white/[0.1] text-neutral-400 hover:text-blue-300 rounded-lg cursor-pointer"
                   >
                     <Copy className="w-3 h-3" />
@@ -118,7 +121,7 @@ export const SlideThumbnailDeck: React.FC<SlideThumbnailDeckProps> = ({
                         e.stopPropagation();
                         onDeleteSlide(idx);
                       }}
-                      title="刪除"
+                      title={t.deleteSlide}
                       className="p-1 hover:bg-white/[0.1] text-neutral-400 hover:text-red-400 rounded-lg cursor-pointer"
                     >
                       <Trash2 className="w-3 h-3" />
@@ -138,7 +141,7 @@ export const SlideThumbnailDeck: React.FC<SlideThumbnailDeckProps> = ({
             <div className="w-8 h-8 rounded-full bg-white/[0.06] group-hover:bg-blue-600 group-hover:text-white flex items-center justify-center transition-all border border-white/[0.06]">
               <Plus className="w-4 h-4" />
             </div>
-            <span className="text-[10px] font-bold">新增頁面</span>
+            <span className="text-[10px] font-bold">{t.addSlide}</span>
           </button>
         </div>
       </div>

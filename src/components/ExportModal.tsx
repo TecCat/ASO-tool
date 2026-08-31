@@ -17,6 +17,7 @@ import {
 import { SlideItem, AppStoreSpec, ExportFormat, TargetStore } from '../types';
 import { APP_STORE_SPECS } from '../data/presets';
 import { renderSlideToCanvas, downloadCanvas, batchExportZip } from '../utils/exportEngine';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -31,6 +32,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   slides,
   activeSlideIndex,
 }) => {
+  const { t, language } = useLanguage();
+
   if (!isOpen) return null;
 
   // Active Store Filter Tab
@@ -89,7 +92,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const handleExportSingle = async (spec: AppStoreSpec) => {
     try {
       setIsExporting(true);
-      setProgressStatus(`正在高解析度算圖 ${spec.name}...`);
+      setProgressStatus(language === 'en' ? `Rendering high-res ${spec.name}...` : `正在高解析度算圖 ${spec.name}...`);
       const currentSlide = slides[activeSlideIndex] || slides[0];
       const canvas = await renderSlideToCanvas(currentSlide, spec, 1.0);
       const ext = exportFormat === 'jpeg' ? 'jpg' : exportFormat;
@@ -143,16 +146,16 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               <Download className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white">商店規格全解析度一鍵匯出</h2>
+              <h2 className="text-base font-bold text-white">{t.exportModalTitle}</h2>
               <p className="text-xs text-neutral-400">
-                自動產出符合 iOS App Store Connect 與 Google Play Console 官方規範的最高解析度圖檔套組
+                {t.exportModalDesc}
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="關閉對話框"
+            aria-label="Close dialog"
             className="p-2 text-neutral-400 hover:text-white rounded-xl hover:bg-white/[0.08] transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
@@ -165,10 +168,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Store Filter */}
             <div className="space-y-1.5">
-              <label className="font-bold text-neutral-300 block text-[11px]">目標上架應用商店</label>
+              <label className="font-bold text-neutral-300 block text-[11px]">{t.targetStore}</label>
               <div className="grid grid-cols-3 gap-1 p-1 bg-[#13131A] rounded-xl border border-white/[0.06]">
                 {[
-                  { id: 'universal', label: '雙平台全部', icon: '✨' },
+                  { id: 'universal', label: t.storeUniversal, icon: '✨' },
                   { id: 'app-store', label: 'App Store', icon: '🍎' },
                   { id: 'google-play', label: 'Google Play', icon: '🤖' },
                 ].map((tab) => (
@@ -191,12 +194,12 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
             {/* Export Format Selector */}
             <div className="space-y-1.5">
-              <label className="font-bold text-neutral-300 block text-[11px]">匯出圖檔格式 (File Format)</label>
+              <label className="font-bold text-neutral-300 block text-[11px]">{t.exportFormat}</label>
               <div className="grid grid-cols-3 gap-1 p-1 bg-[#13131A] rounded-xl border border-white/[0.06]">
                 {[
-                  { id: 'png', label: 'PNG 無損', desc: '官方推薦' },
-                  { id: 'jpeg', label: 'JPG 高畫質', desc: '檔案精巧' },
-                  { id: 'webp', label: 'WebP', desc: '現代格式' },
+                  { id: 'png', label: 'PNG', desc: t.formatPngDesc },
+                  { id: 'jpeg', label: 'JPG', desc: t.formatJpgDesc },
+                  { id: 'webp', label: 'WebP', desc: t.formatWebpDesc },
                 ].map((fmt) => (
                   <button
                     key={fmt.id}
@@ -219,15 +222,15 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           {/* Quick Selection Presets */}
           <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
             <span className="font-bold text-neutral-200 text-sm">
-              規格清單 (已選 {selectedSpecIds.length} 個規格)
+              {language === 'en' ? `Specs Checklist (${selectedSpecIds.length} selected)` : `規格清單 (已選 ${selectedSpecIds.length} 個規格)`}
             </span>
             <div className="flex items-center gap-1.5">
               {[
-                { id: 'required', label: '必填規格' },
-                { id: 'all-phone', label: '全手機' },
+                { id: 'required', label: t.requiredSpecs },
+                { id: 'all-phone', label: t.allPhones },
                 { id: 'all-watch', label: 'Apple Watch' },
-                { id: 'all-tablet', label: '全平板' },
-                { id: 'all', label: '全選規格' },
+                { id: 'all-tablet', label: t.allTablets },
+                { id: 'all', label: t.selectAllSpecs },
               ].map((btn) => (
                 <button
                   key={btn.id}
@@ -292,7 +295,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                         </span>
                         {spec.required && (
                           <span className="text-[10px] font-bold px-2 py-0.2 rounded-full bg-amber-950/80 text-amber-400 border border-amber-800/40">
-                            必填規格
+                            {t.requiredBadge}
                           </span>
                         )}
                       </div>
@@ -310,7 +313,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                         e.stopPropagation();
                         handleExportSingle(spec);
                       }}
-                      title="單張快速下載"
+                      title={t.quickSingleDownload}
                       disabled={isExporting}
                       className="p-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-neutral-300 hover:text-white transition-colors cursor-pointer border border-white/[0.04]"
                     >
@@ -321,7 +324,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => toggleSpec(spec.id)}
-                      aria-label={`選擇規格 ${spec.name}`}
+                      aria-label={`Select ${spec.name}`}
                       className="w-4 h-4 rounded-sm accent-blue-500 cursor-pointer"
                     />
                   </div>
@@ -334,24 +337,24 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           <div className="p-4 bg-[#050507]/80 rounded-2xl border border-white/[0.06] space-y-2.5">
             <div className="flex items-center gap-2 font-bold text-neutral-200">
               <FileCheck className="w-4 h-4 text-emerald-400" />
-              <span>雙平台應用商店審查標準合規性檢核 (Store Compliance Verified)</span>
+              <span>{t.storeComplianceTitle}</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-neutral-400 text-[11px]">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span>精確符合 App Store (1290×2796) & Google Play (1080×2400)</span>
+                <span>{t.storeRule1}</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span>RGB Lossless 24-bit 無透明背景</span>
+                <span>{t.storeRule2}</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span>內建 1024×500 置頂大圖 (Feature Graphic)</span>
+                <span>{t.storeRule3}</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span>自動分類資料夾 + 附贈 App Store Connect 上架指引文檔</span>
+                <span>{t.storeRule4}</span>
               </div>
             </div>
           </div>
@@ -360,7 +363,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           {isExporting && (
             <div className="p-4 bg-blue-950/30 rounded-2xl border border-blue-800/40 space-y-2">
               <div className="flex justify-between items-center text-blue-300 font-semibold">
-                <span>{progressStatus || '正在批次處理中...'}</span>
+                <span>{progressStatus || (language === 'en' ? 'Processing batch...' : '正在批次處理中...')}</span>
                 <span>{progress}%</span>
               </div>
               <div className="w-full h-2 bg-[#13131A] rounded-full overflow-hidden">
@@ -375,7 +378,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           {downloadSuccess && (
             <div className="p-3.5 bg-emerald-950/60 border border-emerald-800/60 rounded-2xl text-emerald-200 flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>匯出成功！ZIP 套件與上架指南已自動儲存至您的下載資料夾。</span>
+              <span>{t.exportSuccess}</span>
             </div>
           )}
         </div>
@@ -383,11 +386,23 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         {/* Modal Footer */}
         <div className="px-6 py-4 border-t border-white/[0.08] bg-[#050507]/90 flex items-center justify-between gap-4">
           <div className="text-xs text-neutral-400">
-            共 <span className="text-white font-bold">{slides.length}</span> 張截圖 ×{' '}
-            <span className="text-white font-bold">{selectedSpecIds.length}</span> 個規格 ={' '}
-            <span className="text-blue-400 font-bold">
-              {slides.length * selectedSpecIds.length} 張圖檔 ({exportFormat.toUpperCase()})
-            </span>
+            {language === 'en' ? (
+              <>
+                Total <span className="text-white font-bold">{slides.length}</span> slides ×{' '}
+                <span className="text-white font-bold">{selectedSpecIds.length}</span> specs ={' '}
+                <span className="text-blue-400 font-bold">
+                  {slides.length * selectedSpecIds.length} files ({exportFormat.toUpperCase()})
+                </span>
+              </>
+            ) : (
+              <>
+                共 <span className="text-white font-bold">{slides.length}</span> 張截圖 ×{' '}
+                <span className="text-white font-bold">{selectedSpecIds.length}</span> 個規格 ={' '}
+                <span className="text-blue-400 font-bold">
+                  {slides.length * selectedSpecIds.length} 張圖檔 ({exportFormat.toUpperCase()})
+                </span>
+              </>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -396,7 +411,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               onClick={onClose}
               className="px-4 py-2.5 rounded-xl text-neutral-400 hover:text-white hover:bg-white/[0.08] transition-colors font-semibold cursor-pointer"
             >
-              取消
+              {t.cancel}
             </button>
             <button
               type="button"
@@ -405,7 +420,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold shadow-lg shadow-blue-950/50 flex items-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               <Archive className="w-4 h-4" />
-              一鍵打包下載商店規格 ZIP
+              {t.downloadZip}
             </button>
           </div>
         </div>
@@ -413,4 +428,3 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     </div>
   );
 };
-
