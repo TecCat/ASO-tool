@@ -675,6 +675,43 @@ export const AICopyAssistant: React.FC<AICopyAssistantProps> = ({
               </p>
             </div>
 
+            {/* 🔴 3 Major User-side BYOK Risks in Red */}
+            <div className="p-3.5 bg-rose-950/40 border-2 border-rose-600/70 rounded-2xl space-y-2 text-rose-100 shadow-lg shadow-rose-950/40">
+              <div className="font-bold text-xs text-rose-400 flex items-center gap-1.5 border-b border-rose-800/50 pb-1.5">
+                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 animate-pulse" />
+                <span>{uiLanguage === 'en' ? '⚠️ 3 Critical BYOK User-Side Security Risks' : '⚠️ 自備 API Key (BYOK) 的 3 大使用者端潛在風險'}</span>
+              </div>
+              
+              <div className="space-y-1.5 text-[11px] leading-relaxed">
+                <div className="flex items-start gap-1.5">
+                  <span className="font-bold text-rose-300 shrink-0">1. 【公用電腦遭他人讀取】：</span>
+                  <span className="text-rose-200/90">
+                    {uiLanguage === 'en'
+                      ? 'If using a public/shared PC and selecting "Remember", subsequent users might use your key quota. (Solution: Choose "Do Not Remember" or clear storage before leaving).'
+                      : '若在公用電腦（如圖書館、網咖）選取「記住」，後續使用者可能調用您的額度。（防範：請選「a. 不記住」或離席前手動清除）。'}
+                  </span>
+                </div>
+
+                <div className="flex items-start gap-1.5">
+                  <span className="font-bold text-rose-300 shrink-0">2. 【螢幕肉眼旁觀窺探】：</span>
+                  <span className="text-rose-200/90">
+                    {uiLanguage === 'en'
+                      ? 'People standing nearby might see your key while typing. (Solution: Keep default password masking •••• active).'
+                      : '輸入時若有他人站在背後可能被肉眼窺視。（防範：系統預設啟用密碼點點遮罩，請勿在公開場合隨意切換為明文）。'}
+                  </span>
+                </div>
+
+                <div className="flex items-start gap-1.5">
+                  <span className="font-bold text-rose-300 shrink-0">3. 【惡意瀏覽器擴充外掛】：</span>
+                  <span className="text-rose-200/90">
+                    {uiLanguage === 'en'
+                      ? 'Malicious browser extensions installed on your PC may sniff page inputs. (Solution: Run in Incognito mode without untrusted extensions, or use Option C Offline Engine).'
+                      : '若使用者電腦安裝了未受信任的側錄外掛，任何網頁輸入皆有風險。（防範：建議使用無痕模式，或直接選擇「c. 智慧 ASO 離線引擎」零風險）。'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
             {/* 3 Interactive Mode Selections */}
             <div className="space-y-2">
               <label className="font-bold text-neutral-300 block">
