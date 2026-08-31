@@ -685,21 +685,38 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                 />
               </div>
 
-              {/* Offset Y */}
-              <div>
-                <div className="flex justify-between text-neutral-400 mb-1">
-                  <span>垂直上下位移 (Y-Offset)</span>
-                  <span className="font-mono text-neutral-300">{deviceConfig.offsetY}%</span>
+              {/* Offset X & Y */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <div className="flex justify-between text-neutral-400 mb-1">
+                    <span>水平左右位移 (X)</span>
+                    <span className="font-mono text-neutral-300">{deviceConfig.offsetX || 0}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="-40"
+                    max="40"
+                    value={deviceConfig.offsetX || 0}
+                    onChange={(e) => updateDevice({ offsetX: Number(e.target.value) })}
+                    aria-label="水平左右位移"
+                    className="w-full accent-blue-500"
+                  />
                 </div>
-                <input
-                  type="range"
-                  min="-35"
-                  max="35"
-                  value={deviceConfig.offsetY}
-                  onChange={(e) => updateDevice({ offsetY: Number(e.target.value) })}
-                  aria-label="垂直上下位移"
-                  className="w-full accent-blue-500"
-                />
+                <div>
+                  <div className="flex justify-between text-neutral-400 mb-1">
+                    <span>垂直上下位移 (Y)</span>
+                    <span className="font-mono text-neutral-300">{deviceConfig.offsetY || 0}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="-35"
+                    max="35"
+                    value={deviceConfig.offsetY || 0}
+                    onChange={(e) => updateDevice({ offsetY: Number(e.target.value) })}
+                    aria-label="垂直上下位移"
+                    className="w-full accent-blue-500"
+                  />
+                </div>
               </div>
 
               {/* 3D Perspective Angles */}
