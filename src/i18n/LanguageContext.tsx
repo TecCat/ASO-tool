@@ -192,10 +192,46 @@ export interface Translations {
   copyText: string;
   copied: string;
   generatingAI: string;
+
+  // Project Storage & Auto-save
+  saveStatusSaving: string;
+  saveStatusSaved: string;
+  saveStatusError: string;
+  saveNow: string;
+  projectRestoredToast: string;
+  projectRestoredDesc: string;
+  projectMenu: string;
+  backupProjectJson: string;
+  backupProjectJsonDesc: string;
+  importProjectJson: string;
+  importProjectJsonDesc: string;
+  resetProject: string;
+  resetProjectConfirm: string;
+  resetProjectSuccess: string;
+  importSuccess: string;
+  importFailed: string;
 }
 
 export const translations: Record<Language, Translations> = {
   'zh-TW': {
+    // Project Storage & Auto-save
+    saveStatusSaving: '儲存中...',
+    saveStatusSaved: '已自動儲存',
+    saveStatusError: '儲存失敗',
+    saveNow: '立即手動儲存',
+    projectRestoredToast: '已為您自動載入上次編輯的進度',
+    projectRestoredDesc: '所有投影片、自訂排版與截圖皆已安全保留',
+    projectMenu: '專案管理',
+    backupProjectJson: '備份匯出專案檔 (.json)',
+    backupProjectJsonDesc: '下載完整專案檔案，方便日後隨時匯入或跨電腦編輯',
+    importProjectJson: '匯入專案檔案 (.json)',
+    importProjectJsonDesc: '載入先前下載的 .json 專案備份檔',
+    resetProject: '重設 / 開啟新專案',
+    resetProjectConfirm: '確定要開新專案嗎？現有未備份的進度將被重設為預設範本。建議先匯出備份檔！',
+    resetProjectSuccess: '已重設為全新範本專案',
+    importSuccess: '專案檔匯入成功！已還原所有頁面與設定',
+    importFailed: '匯入失敗：請確認檔案是否為有效的專案 JSON 格式',
+
     // App Header
     appTitle: 'AppStore Screenshot Studio',
     appBadge: 'iOS 18',
@@ -388,6 +424,24 @@ export const translations: Record<Language, Translations> = {
   },
 
   'en': {
+    // Project Storage & Auto-save
+    saveStatusSaving: 'Saving...',
+    saveStatusSaved: 'Auto-saved',
+    saveStatusError: 'Save failed',
+    saveNow: 'Save Now',
+    projectRestoredToast: 'Restored your previous project session',
+    projectRestoredDesc: 'All slides, layouts, and uploaded screenshots are safely preserved',
+    projectMenu: 'Project',
+    backupProjectJson: 'Export Project Backup (.json)',
+    backupProjectJsonDesc: 'Download complete project file to restore anytime or edit across devices',
+    importProjectJson: 'Import Project Backup (.json)',
+    importProjectJsonDesc: 'Open and restore a previously saved .json project file',
+    resetProject: 'Reset / New Project',
+    resetProjectConfirm: 'Are you sure you want to start a new project? Unsaved edits will be reset to defaults. We recommend exporting a backup first!',
+    resetProjectSuccess: 'Reset to a fresh template project',
+    importSuccess: 'Project imported successfully! Restored all slides and configurations.',
+    importFailed: 'Import failed: Please ensure this is a valid project JSON file.',
+
     // App Header
     appTitle: 'AppStore Screenshot Studio',
     appBadge: 'iOS 18',

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { SlideItem, AppPreset, AIPitchDeckResponse } from './types';
 import { SAMPLE_PRESETS, generateSampleMockupSvg } from './data/presets';
 import { AppHeader } from './components/AppHeader';
@@ -8,7 +8,15 @@ import { AICopyAssistant } from './components/AICopyAssistant';
 import { SlideThumbnailDeck } from './components/SlideThumbnailDeck';
 import { ExportModal } from './components/ExportModal';
 import { LanguageProvider, useLanguage } from './i18n/LanguageContext';
-import { Sparkles, Layers, Maximize2, Plus } from 'lucide-react';
+import {
+  saveProjectToStorage,
+  loadProjectFromStorage,
+  clearProjectStorage,
+  exportProjectToJsonFile,
+  importProjectFromJsonFile,
+  StoredProjectData,
+} from './utils/projectStorage';
+import { Sparkles, Layers, Maximize2, Plus, CheckCircle2, X } from 'lucide-react';
 
 function AppContent() {
   const { t, language } = useLanguage();
@@ -22,9 +30,193 @@ function AppContent() {
   const [showSafeZones, setShowSafeZones] = useState(false);
   const [zoom, setZoom] = useState(0.44);
 
+  // Persistent storage & auto-save state
+  const [isLoadedFromStorage, setIsLoadedFromStorage] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error' | 'idle'>('saved');
+  const [lastSavedText, setLastSavedText] = useState<string>('');
+  const [restoredBanner, setRestoredBanner] = useState<string | null>(null);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // Modals & Panels
   const [showAIPanel, setShowAIPanel] = useState(true);
   const [showExportModal, setShowExportModal] = useState(false);
+
+  // 1. Initial load from persistent storage (IndexedDB / LocalStorage)
+  useEffect(() => {
+    let isMounted = true;
+    loadProjectFromStorage().then((saved) => {
+      if (!isMounted) return;
+      if (saved && Array.isArray(saved.slides) && saved.slides.length > 0) {
+        setSlides(saved.slides);
+        if (typeof saved.activeSlideIndex === 'number' && saved.activeSlideIndex < saved.slides.length) {
+          setActiveSlideIndex(saved.activeSlideIndex);
+        }
+        if (typeof saved.isTabletView === 'boolean') setIsTabletView(saved.isTabletView);
+        if (typeof saved.isStoryboardMode === 'boolean') setIsStoryboardMode(saved.isStoryboardMode);
+        if (typeof saved.zoom === 'number') setZoom(saved.zoom);
+
+        const timeStr = new Date(saved.updatedAt).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+        setLastSavedText(timeStr);
+        setSaveStatus('saved');
+        setRestoredBanner(
+          language === 'en'
+            ? `Restored your previously edited project (${saved.slides.length} slides)`
+            : `已自動為您載入上次編輯的內容（共 ${saved.slides.length} 張頁面）`
+        );
+        setTimeout(() => setRestoredBanner(null), 5000);
+      }
+      setIsLoadedFromStorage(true);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // 2. Debounced auto-save to browser storage whenever edits occur
+  useEffect(() => {
+    if (!isLoadedFromStorage) return;
+
+    setSaveStatus('saving');
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = setTimeout(async () => {
+      const projectData: StoredProjectData = {
+        version: 1,
+        updatedAt: Date.now(),
+        slides,
+        activeSlideIndex,
+        isTabletView,
+        isStoryboardMode,
+        zoom,
+      };
+
+      const success = await saveProjectToStorage(projectData);
+      if (success) {
+        setSaveStatus('saved');
+        const timeStr = new Date().toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+        setLastSavedText(timeStr);
+      } else {
+        setSaveStatus('error');
+      }
+    }, 500);
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [slides, activeSlideIndex, isTabletView, isStoryboardMode, zoom, isLoadedFromStorage]);
+
+  // 3. Protect against leaving before saving completes (beforeunload event)
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (isLoadedFromStorage && slides.length > 0) {
+        // Synchronous / immediate attempt to persist
+        saveProjectToStorage({
+          version: 1,
+          updatedAt: Date.now(),
+          slides,
+          activeSlideIndex,
+          isTabletView,
+          isStoryboardMode,
+          zoom,
+        });
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [slides, activeSlideIndex, isTabletView, isStoryboardMode, zoom, isLoadedFromStorage]);
+
+  // Manual save handler
+  const handleManualSave = async () => {
+    setSaveStatus('saving');
+    const projectData: StoredProjectData = {
+      version: 1,
+      updatedAt: Date.now(),
+      slides,
+      activeSlideIndex,
+      isTabletView,
+      isStoryboardMode,
+      zoom,
+    };
+    const ok = await saveProjectToStorage(projectData);
+    if (ok) {
+      setSaveStatus('saved');
+      const timeStr = new Date().toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
+      setLastSavedText(timeStr);
+      setRestoredBanner(
+        language === 'en' ? 'Project successfully saved locally!' : '專案已成功儲存至本機瀏覽器！'
+      );
+      setTimeout(() => setRestoredBanner(null), 3000);
+    }
+  };
+
+  // Export project backup JSON
+  const handleExportProjectBackup = () => {
+    const projectData: StoredProjectData = {
+      version: 1,
+      updatedAt: Date.now(),
+      slides,
+      activeSlideIndex,
+      isTabletView,
+      isStoryboardMode,
+      zoom,
+      projectName: 'appstore-screenshot-project',
+    };
+    exportProjectToJsonFile(projectData);
+  };
+
+  // Import project backup JSON
+  const handleImportProjectBackup = async (file: File) => {
+    try {
+      const imported = await importProjectFromJsonFile(file);
+      setSlides(imported.slides);
+      setActiveSlideIndex(imported.activeSlideIndex || 0);
+      if (typeof imported.isTabletView === 'boolean') setIsTabletView(imported.isTabletView);
+      if (typeof imported.isStoryboardMode === 'boolean') setIsStoryboardMode(imported.isStoryboardMode);
+      if (typeof imported.zoom === 'number') setZoom(imported.zoom);
+
+      await saveProjectToStorage(imported);
+      setSaveStatus('saved');
+      const timeStr = new Date().toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      setLastSavedText(timeStr);
+      setRestoredBanner(t.importSuccess);
+      setTimeout(() => setRestoredBanner(null), 4000);
+    } catch (err: any) {
+      alert(t.importFailed + ': ' + (err.message || 'Error'));
+    }
+  };
+
+  // Reset project / start fresh
+  const handleResetProject = async () => {
+    if (window.confirm(t.resetProjectConfirm)) {
+      await clearProjectStorage();
+      setSlides(SAMPLE_PRESETS[0].slides);
+      setActiveSlideIndex(0);
+      setSaveStatus('saved');
+      setRestoredBanner(t.resetProjectSuccess);
+      setTimeout(() => setRestoredBanner(null), 3000);
+    }
+  };
 
   // Active slide
   const currentSlide = slides[activeSlideIndex] || slides[0];
@@ -197,7 +389,29 @@ function AppContent() {
         showAIPanel={showAIPanel}
         onToggleAIPanel={() => setShowAIPanel(!showAIPanel)}
         onOpenExportModal={() => setShowExportModal(true)}
+        saveStatus={saveStatus}
+        lastSavedText={lastSavedText}
+        onManualSave={handleManualSave}
+        onExportProjectBackup={handleExportProjectBackup}
+        onImportProjectBackup={handleImportProjectBackup}
+        onResetProject={handleResetProject}
       />
+
+      {/* Floating Restored / Saved Banner Toast */}
+      {restoredBanner && (
+        <div className="absolute top-18 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-3 duration-200">
+          <div className="bg-[#12121A]/95 border border-emerald-500/40 text-emerald-300 text-xs px-4 py-2 rounded-2xl shadow-2xl backdrop-blur-xl flex items-center gap-2.5">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span className="font-semibold">{restoredBanner}</span>
+            <button
+              onClick={() => setRestoredBanner(null)}
+              className="text-neutral-400 hover:text-white ml-2 p-0.5 rounded cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Workspace */}
       <div className="flex-1 flex overflow-hidden relative z-10">
