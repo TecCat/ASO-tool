@@ -27,6 +27,8 @@ export const DeviceMockupFrame: React.FC<DeviceMockupFrameProps> = ({
     rotateX = 0,
     shadowIntensity = 80,
     scale = 1,
+    screenshotFit = 'cover',
+    screenshotScale = 1,
   } = deviceConfig;
 
   // Determine frame style characteristics based on device type
@@ -52,46 +54,46 @@ export const DeviceMockupFrame: React.FC<DeviceMockupFrameProps> = ({
   const isMini = deviceType === 'ipad-mini';
   const isFold = deviceType === 'google-pixel-fold';
 
-  // Dimension scaling
-  let frameWidth = 'w-[270px] sm:w-[290px]';
-  let frameHeight = 'h-[585px] sm:h-[625px]';
-  let outerBorderRadius = 'rounded-[50px]';
-  let innerBorderRadius = 'rounded-[44px]';
-  let bezelPadding = 'p-[6.5px]';
+  // Dimension scaling tailored to 520x1120 canvas (occupying ~70% width & 70% height)
+  let frameWidth = 'w-[365px]';
+  let frameHeight = 'h-[785px]';
+  let outerBorderRadius = 'rounded-[52px]';
+  let innerBorderRadius = 'rounded-[46px]';
+  let bezelPadding = 'p-[7px]';
 
   if (isFoldableOrTablet) {
     if (isFold) {
-      frameWidth = 'w-[360px] sm:w-[390px]';
-      frameHeight = 'h-[440px] sm:h-[480px]';
+      frameWidth = 'w-[410px]';
+      frameHeight = 'h-[530px]';
       outerBorderRadius = 'rounded-[32px]';
       innerBorderRadius = 'rounded-[26px]';
       bezelPadding = 'p-[8px]';
     } else if (isMini) {
-      frameWidth = 'w-[340px] sm:w-[360px]';
-      frameHeight = 'h-[500px] sm:h-[530px]';
+      frameWidth = 'w-[390px]';
+      frameHeight = 'h-[560px]';
       outerBorderRadius = 'rounded-[34px]';
       innerBorderRadius = 'rounded-[28px]';
       bezelPadding = 'p-[9px]';
     } else {
-      frameWidth = 'w-[410px] sm:w-[440px]';
-      frameHeight = 'h-[550px] sm:h-[590px]';
+      frameWidth = 'w-[435px]';
+      frameHeight = 'h-[600px]';
       outerBorderRadius = 'rounded-[38px]';
       innerBorderRadius = 'rounded-[30px]';
       bezelPadding = 'p-[11px]';
     }
   } else if (isGalaxyUltra) {
     // Iconic sharp corner titanium boxy profile
-    frameWidth = 'w-[275px] sm:w-[295px]';
-    frameHeight = 'h-[585px] sm:h-[625px]';
-    outerBorderRadius = 'rounded-[16px]';
-    innerBorderRadius = 'rounded-[10px]';
-    bezelPadding = 'p-[5px]';
+    frameWidth = 'w-[368px]';
+    frameHeight = 'h-[790px]';
+    outerBorderRadius = 'rounded-[18px]';
+    innerBorderRadius = 'rounded-[12px]';
+    bezelPadding = 'p-[6px]';
   } else if (isHomeButtonModel) {
-    frameWidth = 'w-[275px] sm:w-[295px]';
-    frameHeight = 'h-[590px] sm:h-[630px]';
-    outerBorderRadius = 'rounded-[40px]';
-    innerBorderRadius = 'rounded-[2px]';
-    bezelPadding = 'pt-[54px] pb-[58px] px-[12px]';
+    frameWidth = 'w-[365px]';
+    frameHeight = 'h-[785px]';
+    outerBorderRadius = 'rounded-[46px]';
+    innerBorderRadius = 'rounded-[4px]';
+    bezelPadding = 'pt-[70px] pb-[76px] px-[16px]';
   }
 
   const bezelBorder = getMetallicBorder(deviceColor);
@@ -135,12 +137,25 @@ export const DeviceMockupFrame: React.FC<DeviceMockupFrameProps> = ({
         >
           {/* User App Screenshot */}
           {screenshotUrl ? (
-            <img
-              src={screenshotUrl}
-              alt="App Screenshot"
-              className="w-full h-full object-cover object-top select-none pointer-events-none"
-              referrerPolicy="no-referrer"
-            />
+            <div className="w-full h-full flex items-center justify-center overflow-hidden bg-[#09090c]">
+              <img
+                src={screenshotUrl}
+                alt="App Screenshot"
+                className={`w-full h-full ${
+                  screenshotFit === 'contain'
+                    ? 'object-contain object-center'
+                    : screenshotFit === 'fill'
+                    ? 'object-fill'
+                    : 'object-cover object-top'
+                } select-none pointer-events-none transition-transform duration-200`}
+                style={
+                  screenshotScale && screenshotScale !== 1
+                    ? { transform: `scale(${screenshotScale})` }
+                    : undefined
+                }
+                referrerPolicy="no-referrer"
+              />
+            </div>
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center bg-neutral-900 text-neutral-400 p-6 text-center">
               <div className="w-12 h-12 rounded-2xl bg-neutral-800 flex items-center justify-center mb-3 text-2xl">

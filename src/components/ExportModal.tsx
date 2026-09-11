@@ -34,8 +34,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 }) => {
   const { t, language } = useLanguage();
 
-  if (!isOpen) return null;
-
   // Active Store Filter Tab
   const [targetStoreTab, setTargetStoreTab] = useState<TargetStore>('universal');
   // Selected specs
@@ -53,6 +51,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const [progress, setProgress] = useState(0);
   const [progressStatus, setProgressStatus] = useState('');
   const [downloadSuccess, setDownloadSuccess] = useState(false);
+
+  if (!isOpen) return null;
 
   // Filter specs by target store
   const filteredSpecs = APP_STORE_SPECS.filter((spec) => {

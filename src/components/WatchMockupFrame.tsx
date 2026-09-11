@@ -28,18 +28,19 @@ export const WatchMockupFrame: React.FC<WatchMockupFrameProps> = ({
     rotateX = 0,
     watchBandType = 'ocean-band',
     watchBandColor = '#f97316', // Ultra Orange default
+    screenshotFit = 'cover',
+    screenshotScale = 1,
   } = deviceConfig;
 
   const isUltra = deviceType === 'apple-watch-ultra-2';
   const isSeries10 = deviceType === 'apple-watch-series-10';
 
-  // Sizing definitions
-  // md: ~200px wide, lg: ~240px wide, hero: ~280px wide
+  // Sizing definitions: bandH is sleek and compact to avoid covering screen content
   const dimensions = {
-    sm: { width: 140, height: 172, crownW: 8, crownH: 34, actionW: 6, actionH: 28, bandW: 84, bandH: 48, radius: 36, innerRadius: 28 },
-    md: { width: 190, height: 232, crownW: 10, crownH: 46, actionW: 8, actionH: 38, bandW: 114, bandH: 64, radius: 46, innerRadius: 36 },
-    lg: { width: 230, height: 280, crownW: 12, crownH: 56, actionW: 9, actionH: 46, bandW: 138, bandH: 78, radius: 54, innerRadius: 44 },
-    hero: { width: 270, height: 330, crownW: 14, crownH: 66, actionW: 11, actionH: 54, bandW: 162, bandH: 92, radius: 64, innerRadius: 52 },
+    sm: { width: 140, height: 172, crownW: 8, crownH: 34, actionW: 6, actionH: 28, bandW: 84, bandH: 18, radius: 36, innerRadius: 28 },
+    md: { width: 190, height: 232, crownW: 10, crownH: 46, actionW: 8, actionH: 38, bandW: 114, bandH: 24, radius: 46, innerRadius: 36 },
+    lg: { width: 230, height: 280, crownW: 12, crownH: 56, actionW: 9, actionH: 46, bandW: 138, bandH: 30, radius: 54, innerRadius: 44 },
+    hero: { width: 270, height: 330, crownW: 14, crownH: 66, actionW: 11, actionH: 54, bandW: 162, bandH: 36, radius: 64, innerRadius: 52 },
   }[size];
 
   // Metallic casing gradient
@@ -240,12 +241,25 @@ export const WatchMockupFrame: React.FC<WatchMockupFrameProps> = ({
           >
             {/* Screenshot or Realistic watchOS Companion Interface */}
             {screenshotUrl ? (
-              <img
-                src={screenshotUrl}
-                alt="Apple Watch App Screenshot"
-                className="w-full h-full object-cover object-center select-none pointer-events-none"
-                referrerPolicy="no-referrer"
-              />
+              <div className="w-full h-full flex items-center justify-center overflow-hidden bg-black">
+                <img
+                  src={screenshotUrl}
+                  alt="Apple Watch App Screenshot"
+                  className={`w-full h-full ${
+                    screenshotFit === 'contain'
+                      ? 'object-contain object-center'
+                      : screenshotFit === 'fill'
+                      ? 'object-fill'
+                      : 'object-cover object-center'
+                  } select-none pointer-events-none transition-transform duration-200`}
+                  style={
+                    screenshotScale && screenshotScale !== 1
+                      ? { transform: `scale(${screenshotScale})` }
+                      : undefined
+                  }
+                  referrerPolicy="no-referrer"
+                />
+              </div>
             ) : (
               // Default High-Quality watchOS Watch Face / App UI
               <div className="w-full h-full flex flex-col justify-between p-3.5 bg-gradient-to-b from-[#09090b] via-[#050507] to-[#020203] text-white">

@@ -139,6 +139,10 @@ export interface TextConfig {
   showAppIconPill?: boolean;
   appIconUrl?: string;
   appCategoryPill?: string;
+
+  // Safe zone & Auto-Fix positioning
+  safeZoneOffset?: boolean;
+  textOffsetY?: number;
 }
 
 export interface DeviceConfig {
@@ -162,6 +166,9 @@ export interface DeviceConfig {
   watchBandType?: 'ocean-band' | 'sport-band' | 'alpine-loop' | 'trail-loop' | 'milanese' | 'none';
   watchBandColor?: string;
   watchScreenshotUrl?: string;
+  // Screenshot inside device frame fitting & scaling
+  screenshotFit?: 'cover' | 'contain' | 'fill';
+  screenshotScale?: number; // 0.8 to 1.3
 }
 
 export interface SlideItem {

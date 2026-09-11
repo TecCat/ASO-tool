@@ -17,7 +17,18 @@ export interface Translations {
   zoomIn: string;
   zoomOut: string;
 
-  // Smart Alignment
+  // Smart Alignment & Auto-Fix Layout
+  autoFixLayout: string;
+  autoFixLayoutDesc: string;
+  autoFixBtn: string;
+  autoFixAllBtn: string;
+  autoFixSuccess: string;
+  screenshotFitting: string;
+  fitContain: string;
+  fitCover: string;
+  imageScaleInsideFrame: string;
+  safeZoneClearance: string;
+
   smartAlignTitle: string;
   smartAlignSubtitle: string;
   smartAlignSnapNow: string;
@@ -199,7 +210,18 @@ export const translations: Record<Language, Translations> = {
     zoomIn: '放大',
     zoomOut: '縮小',
 
-    // Smart Alignment
+    // Smart Alignment & Auto-Fix Layout
+    autoFixLayout: '一鍵自動修復版面 (Auto-Fix Layout)',
+    autoFixLayoutDesc: '自動校準標題避開 App Store 8% 安全邊界與狀態列裁切，並調整截圖縮放與機身尺寸，確保 100% 完整貼合零裁切。',
+    autoFixBtn: '自動修復此頁',
+    autoFixAllBtn: '同步修復所有頁面',
+    autoFixSuccess: '✨ 已一鍵自動修復版面：標題移出安全邊界區、截圖與裝置已自動縮放貼合，100% 零裁切！',
+    screenshotFitting: '截圖在機身內貼合模式',
+    fitContain: '完整無裁切 (Contain · 100% UI)',
+    fitCover: '滿版填滿 (Cover · 無黑邊)',
+    imageScaleInsideFrame: '機身內截圖縮放',
+    safeZoneClearance: '避開安全邊界 (Safe Zones 8%)',
+
     smartAlignTitle: 'iOS 智慧對齊',
     smartAlignSubtitle: '黃金分割 & 安全邊界',
     smartAlignSnapNow: '一鍵吸附',
@@ -380,7 +402,18 @@ export const translations: Record<Language, Translations> = {
     zoomIn: 'Zoom In',
     zoomOut: 'Zoom Out',
 
-    // Smart Alignment
+    // Smart Alignment & Auto-Fix Layout
+    autoFixLayout: 'Auto-Fix Layout',
+    autoFixLayoutDesc: 'Automatically repositions headline out of App Store 8% safe zones and adjusts image & device scale to fit cleanly within the frame without cropping.',
+    autoFixBtn: 'Auto-Fix Current Slide',
+    autoFixAllBtn: 'Auto-Fix All Slides',
+    autoFixSuccess: '✨ Auto-Fix Applied: Headline moved out of safe zones, device & screenshot image fitted without cropping!',
+    screenshotFitting: 'Screenshot Fit in Device Frame',
+    fitContain: 'Zero-Cut (Contain · 100% UI visible)',
+    fitCover: 'Full Bezel (Cover · Edge to edge)',
+    imageScaleInsideFrame: 'Image Scale inside Frame',
+    safeZoneClearance: 'Clear Safe Zones (8% Top)',
+
     smartAlignTitle: 'iOS Smart Align',
     smartAlignSubtitle: 'Golden Ratio & Safe Zones',
     smartAlignSnapNow: 'Snap Now',

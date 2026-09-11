@@ -21,6 +21,8 @@ import {
   Crosshair,
   ShieldCheck,
   Compass,
+  Wand2,
+  Maximize2,
 } from 'lucide-react';
 import {
   SlideItem,
@@ -183,6 +185,79 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
     }, 3500);
   };
 
+  // Auto-Fix Layout: automatically repositions elements to prevent UI cropping,
+  // specifically moving headline text out of safe zones and adjusting image scale to fit within the device frame
+  const handleAutoFixLayout = (applyToAll = false) => {
+    // 1. Calculate optimal headline font size dynamically based on headline length to prevent line-wrapping/overflow
+    const headlineText = textConfig.headlineText || '';
+    const headlineLength = headlineText.length;
+    let autoHeadlineSize = 42;
+    if (headlineLength > 32) {
+      autoHeadlineSize = 36;
+    } else if (headlineLength > 20) {
+      autoHeadlineSize = 38;
+    } else if (headlineLength > 12) {
+      autoHeadlineSize = 42;
+    } else {
+      autoHeadlineSize = 44;
+    }
+
+    // 2. Reposition headline text out of safe zones (8% top safe zone margin)
+    const updatedText: Partial<typeof textConfig> = {
+      safeZoneOffset: true,
+      textOffsetY: 0,
+      headlineSize: autoHeadlineSize,
+      headlineLetterSpacing: -0.5,
+      headlineAlign: textConfig.headlineAlign || 'center',
+      subtitleSize: 17,
+      subtitleOpacity: 0.92,
+    };
+
+    // 3. Adjust image scale and device scale to fit perfectly within the device frame and canvas without UI cropping
+    const isTablet = deviceConfig.deviceType?.includes('ipad') || deviceConfig.deviceType?.includes('tablet');
+    const isWatch = deviceConfig.deviceType?.startsWith('apple-watch');
+    const isDual = layout === 'dual-devices';
+
+    // Device mockup scaling to guarantee zero edge cropping
+    const optimalDeviceScale = isTablet ? 0.90 : isDual ? 0.94 : isWatch ? 1.0 : 1.0;
+
+    const updatedDevice: Partial<typeof deviceConfig> = {
+      scale: optimalDeviceScale,
+      offsetX: 0,
+      offsetY: 0,
+      rotateZ: layout === 'tilted-3d-left' ? -5 : layout === 'tilted-3d-right' ? 5 : 0,
+      // Adjust screenshot image scale and fit within device frame so no UI is cropped
+      screenshotFit: 'contain',
+      screenshotScale: 1.0,
+      shadowIntensity: 65,
+      glareEffect: true,
+      showDynamicIsland: !isTablet,
+      showStatusBar: true,
+    };
+
+    onUpdateSlide({
+      textConfig: { ...textConfig, ...updatedText },
+      deviceConfig: { ...deviceConfig, ...updatedDevice },
+    });
+
+    let message = language === 'en'
+      ? '✨ Auto-Fix Applied: Headline moved out of safe zones, image & device scaled to fit frame with zero cropping!'
+      : '✨ 已一鍵自動修復版面：標題移出安全邊界、截圖縮放貼合機身，100% 完整顯示零裁切！';
+
+    if (applyToAll) {
+      setTimeout(() => {
+        onApplyToAllSlides('textConfig');
+        onApplyToAllSlides('deviceConfig');
+      }, 50);
+      message += language === 'en' ? ' (Applied to all slides)' : ' (已同步套用至所有頁面)';
+    }
+
+    setAlignFeedback(message);
+    setTimeout(() => {
+      setAlignFeedback(null);
+    }, 4000);
+  };
+
   const handleSelectDeviceModel = (model: DeviceModelInfo) => {
     updateDevice({
       deviceType: model.id,
@@ -233,27 +308,36 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
 
   return (
     <div className="flex flex-col h-full bg-[#0A0A0C]/95 text-neutral-100 rounded-3xl border border-white/[0.08] shadow-2xl overflow-hidden backdrop-blur-xl">
-      {/* Top Smart Alignment Header Action Bar */}
-      <div className="p-2.5 bg-gradient-to-r from-blue-950/40 via-[#101322] to-indigo-950/40 border-b border-white/[0.08] flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5">
-          <div className="w-6 h-6 rounded-lg bg-blue-600/30 text-blue-400 border border-blue-500/40 flex items-center justify-center">
-            <Magnet className="w-3.5 h-3.5 animate-pulse" />
+      {/* Top Smart Alignment & Auto-Fix Header Action Bar */}
+      <div className="p-2.5 bg-gradient-to-r from-emerald-950/50 via-[#0e1620] to-blue-950/40 border-b border-white/[0.08] flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center">
+            <Wand2 className="w-4 h-4 animate-pulse" />
           </div>
           <div>
-            <span className="text-[11px] font-bold text-white block leading-tight">{t.smartAlign}</span>
-            <span className="text-[9px] text-blue-300/80 block">{t.smartAlignDesc}</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-bold text-white block leading-tight">
+                {t.autoFixLayout || 'Auto-Fix Layout'}
+              </span>
+              <span className="text-[8px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1 py-0.2 rounded tracking-wider">
+                ANTI-CROP
+              </span>
+            </div>
+            <span className="text-[9px] text-neutral-400 block truncate max-w-[170px]">
+              {language === 'en' ? 'Safe zones + image fit' : '避開安全邊界・截圖貼合機身'}
+            </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
-            onClick={() => handleSmartAlign(activeAlignMode, false)}
-            className="px-2.5 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg text-[11px] font-bold shadow-md shadow-blue-900/30 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
-            title={language === 'en' ? 'Snap device & text to iOS App Store golden ratio and safe zones' : '自動根據 iOS App Store 規範吸附至黃金分割與安全邊界'}
+            onClick={() => handleAutoFixLayout(false)}
+            className="px-2.5 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-[11px] font-bold shadow-md shadow-emerald-900/40 flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 border border-emerald-400/30"
+            title={language === 'en' ? 'Auto-fix layout: Move headline out of safe zones and fit image in frame' : '一鍵自動修復版面：將標題移出安全區並縮放截圖完美貼合機身'}
           >
-            <Sparkles className="w-3 h-3" />
-            {t.smartSnapBtn}
+            <Wand2 className="w-3.5 h-3.5" />
+            <span>{t.autoFixBtn || 'Auto-Fix'}</span>
           </button>
         </div>
       </div>
@@ -439,33 +523,59 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
               </div>
 
               {/* Headline Controls */}
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <div>
-                  <div className="flex justify-between text-neutral-400 mb-1">
-                    <span>{t.fontSize}</span>
-                    <span className="font-mono text-neutral-300">{textConfig.headlineSize}px</span>
+              <div className="space-y-2 pt-1">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <div className="flex justify-between text-neutral-400 mb-1">
+                      <span>{t.fontSize}</span>
+                      <span className="font-mono text-neutral-300">{textConfig.headlineSize}px</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="36"
+                      max="78"
+                      value={textConfig.headlineSize}
+                      onChange={(e) => updateText({ headlineSize: Number(e.target.value) })}
+                      aria-label="Headline size"
+                      className="w-full accent-blue-500"
+                    />
                   </div>
-                  <input
-                    type="range"
-                    min="28"
-                    max="64"
-                    value={textConfig.headlineSize}
-                    onChange={(e) => updateText({ headlineSize: Number(e.target.value) })}
-                    aria-label="Headline size"
-                    className="w-full accent-blue-500"
-                  />
+                  <div>
+                    <div className="flex justify-between text-neutral-400 mb-1">
+                      <span>{t.fontColor}</span>
+                    </div>
+                    <input
+                      type="color"
+                      value={textConfig.headlineColor}
+                      onChange={(e) => updateText({ headlineColor: e.target.value })}
+                      aria-label="Headline color"
+                      className="w-full h-7 rounded cursor-pointer border-0 bg-transparent"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <div className="flex justify-between text-neutral-400 mb-1">
-                    <span>{t.fontColor}</span>
-                  </div>
-                  <input
-                    type="color"
-                    value={textConfig.headlineColor}
-                    onChange={(e) => updateText({ headlineColor: e.target.value })}
-                    aria-label="Headline color"
-                    className="w-full h-7 rounded cursor-pointer border-0 bg-transparent"
-                  />
+
+                {/* Quick Font Size Presets */}
+                <div className="flex items-center gap-1.5 pt-0.5">
+                  <span className="text-[10px] text-neutral-500">{language === 'en' ? 'Quick:' : '快捷字級:'}</span>
+                  {[
+                    { label: language === 'en' ? 'Normal (42)' : '適中 42', size: 42 },
+                    { label: language === 'en' ? 'Standard (48)' : '推薦 48', size: 48 },
+                    { label: language === 'en' ? 'Prominent (56)' : '吸睛 56', size: 56 },
+                    { label: language === 'en' ? 'Hero (64)' : '特大 64', size: 64 },
+                  ].map((p) => (
+                    <button
+                      key={p.size}
+                      type="button"
+                      onClick={() => updateText({ headlineSize: p.size })}
+                      className={`px-2 py-0.5 rounded text-[10px] font-medium transition-all cursor-pointer ${
+                        textConfig.headlineSize === p.size
+                          ? 'bg-blue-600 text-white font-bold'
+                          : 'bg-white/[0.06] text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -507,6 +617,30 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                 >
                   <AlignRight className="w-3.5 h-3.5" />
                 </button>
+              </div>
+
+              {/* App Store Safe Zone Clearance */}
+              <div className="pt-2 border-t border-white/[0.06] space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-[11px] font-semibold text-neutral-200">
+                      {language === 'en' ? 'Clear Safe Zones (8% Top)' : '避開 App Store 8% 頂部安全區'}
+                    </span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={!!textConfig.safeZoneOffset}
+                    onChange={(e) => updateText({ safeZoneOffset: e.target.checked })}
+                    aria-label="Toggle safe zone clearance"
+                    className="rounded-sm accent-emerald-500 cursor-pointer"
+                  />
+                </div>
+                <p className="text-[10px] text-neutral-400 leading-normal">
+                  {language === 'en'
+                    ? 'Prevents headline from being cropped by iPhone status bar, Dynamic Island, or App Store search overlay.'
+                    : '避免標題被 iPhone 頂部狀態列、靈動島或 App Store 搜尋預覽遮擋裁切。'}
+                </p>
               </div>
             </div>
 
@@ -603,6 +737,130 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
         {/* ===================== TAB 2: DEVICE & LAYOUT ===================== */}
         {activeTab === 'device' && (
           <div className="space-y-3.5">
+            {/* Auto-Fix Layout & Anti-Crop Feature Card */}
+            <div className="p-3.5 bg-gradient-to-b from-emerald-950/40 via-[#0e1620] to-[#0F0F14]/90 rounded-2xl border border-emerald-500/30 space-y-3 shadow-xl shadow-emerald-950/20">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center">
+                    <Wand2 className="w-3.5 h-3.5 text-emerald-400" />
+                  </div>
+                  <div>
+                    <label className="font-bold text-neutral-100 text-xs block leading-tight">
+                      {t.autoFixLayout || 'Auto-Fix Layout'}
+                    </label>
+                    <span className="text-[9px] text-emerald-400/90 font-medium block">
+                      {language === 'en' ? 'Prevents UI Cropping & Overlap' : '防裁切與安全邊界保護'}
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[9px] font-bold text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                  {language === 'en' ? 'ZERO CROP' : '100% 零裁切'}
+                </span>
+              </div>
+
+              <p className="text-[11px] text-neutral-300/90 leading-relaxed">
+                {t.autoFixLayoutDesc ||
+                  (language === 'en'
+                    ? 'Automatically repositions headline text out of App Store 8% safe zones and adjusts image scale to fit cleanly within the device frame without UI cropping.'
+                    : '自動校準標題避開 App Store 8% 安全邊界與狀態列裁切，並調整截圖縮放與機身尺寸，確保 100% 完整貼合零裁切。')}
+              </p>
+
+              {/* Status Badges */}
+              <div className="flex flex-wrap gap-1.5 pt-0.5 text-[10px]">
+                <span className="inline-flex items-center gap-1 bg-white/[0.05] border border-white/[0.08] px-2 py-0.5 rounded-md text-emerald-400 font-medium">
+                  <Check className="w-3 h-3 text-emerald-400" />
+                  {language === 'en' ? 'Headline outside 8% Safe Zone' : '標題移出 8% 安全區'}
+                </span>
+                <span className="inline-flex items-center gap-1 bg-white/[0.05] border border-white/[0.08] px-2 py-0.5 rounded-md text-teal-400 font-medium">
+                  <Check className="w-3 h-3 text-teal-400" />
+                  {language === 'en' ? 'Image scale fitted to frame' : '截圖貼合機身零裁切'}
+                </span>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => handleAutoFixLayout(false)}
+                  className="py-2.5 px-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl font-bold text-[11px] transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-emerald-950/40 active:scale-98 border border-emerald-400/40"
+                >
+                  <Wand2 className="w-3.5 h-3.5" />
+                  <span>{t.autoFixBtn || 'Auto-Fix Current'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAutoFixLayout(true)}
+                  className="py-2.5 px-3 bg-[#131922] hover:bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 hover:text-white rounded-xl font-bold text-[11px] transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-98"
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>{t.autoFixAllBtn || 'Auto-Fix All'}</span>
+                </button>
+              </div>
+
+              {/* Screenshot Image Fit Inside Frame Settings */}
+              <div className="pt-2 border-t border-white/[0.08] space-y-2">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-neutral-300 font-medium">{t.screenshotFitting || 'Screenshot Image Fit'}</span>
+                  <span className="text-[10px] text-emerald-400 font-mono">
+                    {deviceConfig.screenshotFit === 'contain'
+                      ? (language === 'en' ? 'Contain (Zero Crop)' : '完整無裁切')
+                      : (language === 'en' ? 'Cover (Full Bezel)' : '滿版填滿')}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => updateDevice({ screenshotFit: 'contain', screenshotScale: 1.0 })}
+                    className={`py-1.5 px-2 rounded-lg border text-left text-[10px] font-semibold transition-all cursor-pointer ${
+                      deviceConfig.screenshotFit === 'contain'
+                        ? 'bg-emerald-600/20 border-emerald-500 text-emerald-300 font-bold'
+                        : 'bg-[#13131A] border-white/[0.06] text-neutral-400 hover:text-neutral-200'
+                    }`}
+                  >
+                    <div>🛡️ {language === 'en' ? 'Zero-Cut (Contain)' : '100% 完整無裁切'}</div>
+                    <div className="text-[9px] text-neutral-400 font-normal truncate">
+                      {language === 'en' ? 'Full UI completely visible' : '所有按鈕與導航完全可見'}
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => updateDevice({ screenshotFit: 'cover' })}
+                    className={`py-1.5 px-2 rounded-lg border text-left text-[10px] font-semibold transition-all cursor-pointer ${
+                      deviceConfig.screenshotFit === 'cover' || !deviceConfig.screenshotFit
+                        ? 'bg-blue-600/20 border-blue-500 text-blue-300 font-bold'
+                        : 'bg-[#13131A] border-white/[0.06] text-neutral-400 hover:text-neutral-200'
+                    }`}
+                  >
+                    <div>📱 {language === 'en' ? 'Full Screen (Cover)' : '滿版填滿 (Cover)'}</div>
+                    <div className="text-[9px] text-neutral-400 font-normal truncate">
+                      {language === 'en' ? 'Edge-to-edge screen' : '填滿螢幕邊界'}
+                    </div>
+                  </button>
+                </div>
+
+                {/* Image Scale Slider inside Frame */}
+                <div>
+                  <div className="flex justify-between text-neutral-400 text-[11px] mb-1">
+                    <span>{t.imageScaleInsideFrame || 'Image Scale in Frame'}</span>
+                    <span className="font-mono text-neutral-300">
+                      {Math.round((deviceConfig.screenshotScale || 1) * 100)}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.80"
+                    max="1.25"
+                    step="0.01"
+                    value={deviceConfig.screenshotScale || 1}
+                    onChange={(e) => updateDevice({ screenshotScale: Number(e.target.value) })}
+                    aria-label="Image scale inside frame"
+                    className="w-full accent-emerald-500"
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Smart Alignment Card */}
             <div className="p-3.5 bg-gradient-to-b from-[#101328]/80 to-[#0F0F14]/70 rounded-2xl border border-blue-500/20 space-y-3 shadow-lg shadow-blue-950/20">
               <div className="flex items-center justify-between">
@@ -890,7 +1148,58 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
 
             {/* Device Hardware & Screen Display Controls */}
             <div className="p-3.5 bg-[#0F0F14]/70 rounded-2xl border border-white/[0.06] space-y-3">
-              <label className="font-bold text-neutral-200 block">{t.hardwareControls}</label>
+              <div className="flex items-center justify-between">
+                <label className="font-bold text-neutral-200 block">{t.hardwareControls}</label>
+                <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-medium">
+                  {language === 'en' ? 'WYSIWYG 1:1 Export' : '1:1 實機匯出校準'}
+                </span>
+              </div>
+
+              {/* Anti-Clipping Preset Buttons */}
+              <div className="space-y-1.5 p-2 bg-[#13131A] rounded-xl border border-white/[0.06]">
+                <div className="flex justify-between items-center">
+                  <span className="text-[11px] font-bold text-neutral-300">
+                    {language === 'en' ? 'App Store Layout Presets:' : 'App Store 排版與裁切模式:'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateDevice({ scale: 1.0, offsetX: 0, offsetY: 0, rotateZ: 0 });
+                    }}
+                    className={`p-2 rounded-lg text-left text-[11px] font-semibold border transition-all cursor-pointer ${
+                      (deviceConfig.scale === 1.0 || !deviceConfig.scale) &&
+                      (deviceConfig.offsetY === 0 || !deviceConfig.offsetY) &&
+                      (deviceConfig.offsetX === 0 || !deviceConfig.offsetX)
+                        ? 'bg-emerald-600/20 border-emerald-500 text-emerald-300'
+                        : 'bg-white/[0.04] border-white/[0.06] text-neutral-300 hover:text-white'
+                    }`}
+                  >
+                    <div className="font-bold">🛡️ {language === 'en' ? '100% Zero-Cut' : '100% 完整無裁切'}</div>
+                    <div className="text-[9px] text-neutral-400 font-normal">
+                      {language === 'en' ? 'Entire UI fully visible' : '截圖完整保留、文字與機身居中'}
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      updateDevice({ scale: 1.14, offsetX: 0, offsetY: 12, rotateZ: 0 });
+                    }}
+                    className={`p-2 rounded-lg text-left text-[11px] font-semibold border transition-all cursor-pointer ${
+                      deviceConfig.scale === 1.14 && deviceConfig.offsetY === 12
+                        ? 'bg-blue-600/20 border-blue-500 text-blue-300'
+                        : 'bg-white/[0.04] border-white/[0.06] text-neutral-300 hover:text-white'
+                    }`}
+                  >
+                    <div className="font-bold">📱 {language === 'en' ? 'Bottom Bleed' : '底部沉浸延伸'}</div>
+                    <div className="text-[9px] text-neutral-400 font-normal">
+                      {language === 'en' ? 'Modern edge-to-edge' : '機身微大、延伸至底部邊界'}
+                    </div>
+                  </button>
+                </div>
+              </div>
 
               {/* Scale Slider */}
               <div>
@@ -1380,6 +1689,71 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                   />
                 </div>
               )}
+
+              {/* Screenshot Fitting & Scale inside Frame */}
+              <div className="pt-2 border-t border-white/[0.06] space-y-2">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-neutral-300 font-semibold">{t.screenshotFitting || 'Screenshot Fitting Mode'}</span>
+                  <button
+                    type="button"
+                    onClick={() => updateDevice({ screenshotFit: 'contain', screenshotScale: 1.0 })}
+                    className="text-[10px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer font-medium"
+                  >
+                    <Wand2 className="w-3 h-3" />
+                    {language === 'en' ? 'Auto-Fit to Frame' : '自動貼合機身'}
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => updateDevice({ screenshotFit: 'contain', screenshotScale: 1.0 })}
+                    className={`py-1.5 px-2 rounded-lg border text-left text-[10px] font-semibold transition-all cursor-pointer ${
+                      deviceConfig.screenshotFit === 'contain'
+                        ? 'bg-emerald-600/20 border-emerald-500 text-emerald-300 font-bold'
+                        : 'bg-[#13131A] border-white/[0.06] text-neutral-400 hover:text-neutral-200'
+                    }`}
+                  >
+                    <div>🛡️ {language === 'en' ? 'Zero-Cut (Contain)' : '100% 完整零裁切'}</div>
+                    <div className="text-[9px] text-neutral-400 font-normal truncate">
+                      {language === 'en' ? 'Preserve entire UI' : '完全保留所有介面細節'}
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => updateDevice({ screenshotFit: 'cover' })}
+                    className={`py-1.5 px-2 rounded-lg border text-left text-[10px] font-semibold transition-all cursor-pointer ${
+                      deviceConfig.screenshotFit === 'cover' || !deviceConfig.screenshotFit
+                        ? 'bg-blue-600/20 border-blue-500 text-blue-300 font-bold'
+                        : 'bg-[#13131A] border-white/[0.06] text-neutral-400 hover:text-neutral-200'
+                    }`}
+                  >
+                    <div>📱 {language === 'en' ? 'Full Bezel (Cover)' : '滿版填滿 (Cover)'}</div>
+                    <div className="text-[9px] text-neutral-400 font-normal truncate">
+                      {language === 'en' ? 'Edge-to-edge fill' : '貼齊螢幕邊框'}
+                    </div>
+                  </button>
+                </div>
+
+                <div>
+                  <div className="flex justify-between text-neutral-400 text-[11px] mb-1">
+                    <span>{t.imageScaleInsideFrame || 'Image Scale'}</span>
+                    <span className="font-mono text-neutral-300">
+                      {Math.round((deviceConfig.screenshotScale || 1) * 100)}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.80"
+                    max="1.25"
+                    step="0.01"
+                    value={deviceConfig.screenshotScale || 1}
+                    onChange={(e) => updateDevice({ screenshotScale: Number(e.target.value) })}
+                    aria-label="Image scale inside frame"
+                    className="w-full accent-emerald-500"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Built-in Sample UI Presets */}

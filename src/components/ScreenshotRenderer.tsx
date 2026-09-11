@@ -68,7 +68,7 @@ export const ScreenshotRenderer: React.FC<ScreenshotRendererProps> = ({
 
   return (
     <div
-      className={`relative shadow-2xl rounded-3xl overflow-hidden select-none border border-neutral-800/80 transition-all ${className}`}
+      className={`relative shadow-2xl ${className.includes('rounded') ? '' : 'rounded-3xl'} overflow-hidden select-none border border-neutral-800/80 transition-all ${className}`}
       style={{
         width: `${canvasWidth * zoom}px`,
         height: `${canvasHeight * zoom}px`,
@@ -149,14 +149,23 @@ export const ScreenshotRenderer: React.FC<ScreenshotRendererProps> = ({
         )}
 
         {/* --- Content Area --- */}
-        <div className="relative z-10 w-full h-full flex flex-col justify-between p-10 box-border">
+        <div className="relative z-10 w-full h-full flex flex-col justify-between px-6 pt-8 pb-3 box-border">
           {/* Top Section */}
           {isTextTop ? (
-            <div className={`w-full flex flex-col ${textAlignClass} pt-6 space-y-3`}>
+            <div
+              className={`w-full flex flex-col ${textAlignClass} ${
+                textConfig.safeZoneOffset ? 'pt-8' : 'pt-3'
+              } space-y-2.5 z-20 transition-all`}
+              style={
+                textConfig.textOffsetY
+                  ? { transform: `translateY(${textConfig.textOffsetY}px)` }
+                  : undefined
+              }
+            >
               {/* Badge */}
               {textConfig.showBadge && textConfig.badgeText && (
                 <div
-                  className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold shadow-sm tracking-wider uppercase"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold shadow-sm tracking-wider uppercase"
                   style={{
                     backgroundColor: textConfig.badgeBgColor || '#10b981',
                     color: textConfig.badgeTextColor || '#022c22',
@@ -166,12 +175,12 @@ export const ScreenshotRenderer: React.FC<ScreenshotRendererProps> = ({
                 </div>
               )}
 
-              {/* Headline */}
+              {/* Headline with smart orphan prevention & line balance */}
               <h2
-                className="leading-[1.18] font-black tracking-tight whitespace-pre-line break-words max-w-full drop-shadow-sm"
+                className="leading-[1.14] font-black tracking-tight whitespace-pre-line break-keep [text-wrap:balance] max-w-full drop-shadow-sm"
                 style={{
                   fontFamily: `"${textConfig.fontFamily}", "Noto Sans TC", sans-serif`,
-                  fontSize: `${textConfig.headlineSize || 42}px`,
+                  fontSize: `${textConfig.headlineSize || 46}px`,
                   color: textConfig.headlineColor || '#ffffff',
                   letterSpacing: `${textConfig.headlineLetterSpacing || -0.5}px`,
                   fontWeight:
@@ -188,7 +197,7 @@ export const ScreenshotRenderer: React.FC<ScreenshotRendererProps> = ({
               {/* Subtitle */}
               {textConfig.showSubtitle && textConfig.subtitleText && (
                 <p
-                  className="leading-snug max-w-[92%] whitespace-pre-line break-words font-medium"
+                  className="leading-snug max-w-[94%] whitespace-pre-line break-keep [text-wrap:balance] font-medium"
                   style={{
                     fontFamily: `"${textConfig.fontFamily}", "Noto Sans TC", sans-serif`,
                     fontSize: `${textConfig.subtitleSize || 18}px`,
@@ -236,16 +245,16 @@ export const ScreenshotRenderer: React.FC<ScreenshotRendererProps> = ({
           {/* Bottom Section */}
           {isTextTop ? (
             <div
-              className="w-full flex-1 flex items-end justify-center relative pb-0"
+              className="w-full flex-1 flex items-end justify-center relative pb-2 min-h-0 overflow-hidden"
               style={{
                 transform: `translate(${deviceConfig.offsetX}%, ${deviceConfig.offsetY}%)`,
               }}
             >
               {/* 1. iPhone + Apple Watch Dual Companion Layout */}
               {layout === 'phone-with-watch' ? (
-                <div className="relative flex items-end justify-center w-full h-[600px]">
+                <div className="relative flex items-end justify-center w-full h-full pb-1">
                   {/* Left: iPhone Phone Frame */}
-                  <div className="relative z-10 bottom-0 -left-10 rotate-[-4deg] scale-[0.92]">
+                  <div className="relative z-10 bottom-0 left-[-24px] rotate-[-2.5deg] scale-[0.98]">
                     <DeviceMockupFrame
                       deviceConfig={deviceConfig}
                       screenshotUrl={slide.screenshotUrl}
@@ -253,12 +262,12 @@ export const ScreenshotRenderer: React.FC<ScreenshotRendererProps> = ({
                     />
                   </div>
                   {/* Right: Apple Watch Frame Overlapping */}
-                  <div className="absolute right-0 bottom-12 z-20 rotate-[6deg] drop-shadow-2xl">
+                  <div className="absolute right-[-2px] bottom-3 z-20 rotate-[4.5deg] drop-shadow-2xl">
                     <WatchMockupFrame
                       deviceConfig={{
                         ...deviceConfig,
                         deviceType: 'apple-watch-ultra-2',
-                        scale: 1.05,
+                        scale: 1.0,
                         watchBandType: deviceConfig.watchBandType || 'ocean-band',
                         watchBandColor: deviceConfig.watchBandColor || '#f97316',
                       }}
@@ -273,7 +282,7 @@ export const ScreenshotRenderer: React.FC<ScreenshotRendererProps> = ({
                 </div>
               ) : layout === 'watch-focus' || isWatchDevice ? (
                 // 2. Apple Watch Centered Focus Layout
-                <div className="relative flex items-center justify-center w-full h-[520px] pb-4">
+                <div className="relative flex items-end justify-center w-full h-full pb-6">
                   <WatchMockupFrame
                     deviceConfig={deviceConfig}
                     screenshotUrl={slide.screenshotUrl}
@@ -283,15 +292,15 @@ export const ScreenshotRenderer: React.FC<ScreenshotRendererProps> = ({
                 </div>
               ) : layout === 'dual-devices' ? (
                 // 3. Dual overlapping phones
-                <div className="relative flex items-end justify-center w-full h-[580px]">
-                  <div className="absolute -left-6 bottom-0 rotate-[-8deg] scale-90 opacity-90">
+                <div className="relative flex items-end justify-center w-full h-full pb-1">
+                  <div className="absolute left-[-26px] bottom-0 rotate-[-7deg] scale-[0.94] opacity-95">
                     <DeviceMockupFrame
-                      deviceConfig={{ ...deviceConfig, rotateZ: -8, scale: 0.88 }}
+                      deviceConfig={{ ...deviceConfig, rotateZ: -7, scale: 0.94 }}
                       screenshotUrl={slide.secondaryScreenshotUrl || slide.screenshotUrl}
                       isTablet={isTabletView}
                     />
                   </div>
-                  <div className="relative z-10 bottom-0 rotate-[4deg]">
+                  <div className="relative z-10 bottom-0 right-[-18px] rotate-[4deg] scale-[0.98]">
                     <DeviceMockupFrame
                       deviceConfig={deviceConfig}
                       screenshotUrl={slide.screenshotUrl}
@@ -301,16 +310,27 @@ export const ScreenshotRenderer: React.FC<ScreenshotRendererProps> = ({
                 </div>
               ) : (
                 // 4. Standard Single Mockup
-                <DeviceMockupFrame
-                  deviceConfig={deviceConfig}
-                  screenshotUrl={slide.screenshotUrl}
-                  isTablet={isTabletView}
-                />
+                <div className="relative flex items-end justify-center w-full h-full pb-1">
+                  <DeviceMockupFrame
+                    deviceConfig={deviceConfig}
+                    screenshotUrl={slide.screenshotUrl}
+                    isTablet={isTabletView}
+                  />
+                </div>
               )}
             </div>
           ) : (
             // Inverted: Text at Bottom
-            <div className={`w-full flex flex-col ${textAlignClass} pb-8 space-y-3`}>
+            <div
+              className={`w-full flex flex-col ${textAlignClass} ${
+                textConfig.safeZoneOffset ? 'pb-14' : 'pb-8'
+              } space-y-3 transition-all`}
+              style={
+                textConfig.textOffsetY
+                  ? { transform: `translateY(${textConfig.textOffsetY}px)` }
+                  : undefined
+              }
+            >
               {textConfig.showBadge && textConfig.badgeText && (
                 <div
                   className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold shadow-sm uppercase"

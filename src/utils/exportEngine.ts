@@ -272,19 +272,23 @@ export async function renderSlideToCanvas(
   }
 
   // Standard Portrait Store Screenshot Layout
-  const isTextTop = layout !== 'phone-top-text-bottom';
-  const textSectionTop = isTextTop ? targetHeight * 0.07 : targetHeight * 0.72;
+  const isTextTop = layout !== 'phone-top-text-bottom' && layout !== 'watch-top-text-bottom';
+  const textOffsetPx = ((textConfig.textOffsetY || 0) / 100) * targetHeight;
+  const safeZoneTopRatio = textConfig.safeZoneOffset ? 0.088 : 0.065;
+  const textSectionTop = isTextTop
+    ? targetHeight * safeZoneTopRatio + textOffsetPx
+    : targetHeight * 0.70 + textOffsetPx;
 
   // 3. Draw Badge if enabled
   let currentY = textSectionTop;
 
   if (textConfig.showBadge && textConfig.badgeText) {
     ctx.save();
-    const badgeFontSize = Math.round(28 * fontMultiplier);
+    const badgeFontSize = Math.round(34 * fontMultiplier);
     ctx.font = `bold ${badgeFontSize}px "${textConfig.fontFamily}", sans-serif`;
     const textMetrics = ctx.measureText(textConfig.badgeText);
-    const badgePaddingX = 24 * fontMultiplier;
-    const badgePaddingY = 12 * fontMultiplier;
+    const badgePaddingX = Math.round(26 * fontMultiplier);
+    const badgePaddingY = Math.round(12 * fontMultiplier);
     const badgeWidth = textMetrics.width + badgePaddingX * 2;
     const badgeHeight = badgeFontSize + badgePaddingY * 2;
 
@@ -305,25 +309,37 @@ export async function renderSlideToCanvas(
     ctx.fillText(textConfig.badgeText, badgeX + badgeWidth / 2, currentY + badgeHeight / 2);
     ctx.restore();
 
-    currentY += badgeHeight + 28 * fontMultiplier;
+    currentY += badgeHeight + Math.round(22 * fontMultiplier);
   }
 
-  // 4. Draw Headline
+  // 4. Draw Headline (High-converting, prominent, punchy App Store typography)
   ctx.save();
-  const headlineFontSize = Math.round((textConfig.headlineSize || 42) * 2.2 * fontMultiplier);
+  // Scaled for large, crisp, store-compliant presence (matches 1290x2796 visual hierarchy)
+  let headlineFontSize = Math.round((textConfig.headlineSize || 46) * 3.0 * fontMultiplier);
   const headlineWeight =
-    textConfig.headlineWeight === 'black' ? '900' : textConfig.headlineWeight === 'bold' ? 'bold' : '600';
+    textConfig.headlineWeight === 'black' ? '900' : textConfig.headlineWeight === 'bold' ? 'bold' : '700';
   ctx.font = `${headlineWeight} ${headlineFontSize}px "${textConfig.fontFamily}", "Noto Sans TC", sans-serif`;
   ctx.fillStyle = textConfig.headlineColor || '#ffffff';
   ctx.textAlign = textConfig.headlineAlign;
   ctx.textBaseline = 'top';
 
+  const headlineLines = (textConfig.headlineText || 'App Headline').split('\n');
+  const maxAllowedWidth = targetWidth * 0.90;
+
+  // Auto-fit font size so long sentences never overflow or break awkwardly
+  for (const line of headlineLines) {
+    const lineWidth = ctx.measureText(line).width;
+    if (lineWidth > maxAllowedWidth) {
+      headlineFontSize = Math.round(headlineFontSize * (maxAllowedWidth / lineWidth));
+      ctx.font = `${headlineWeight} ${headlineFontSize}px "${textConfig.fontFamily}", "Noto Sans TC", sans-serif`;
+    }
+  }
+
   let headlineX = targetWidth / 2;
   if (textConfig.headlineAlign === 'left') headlineX = targetWidth * 0.08;
   if (textConfig.headlineAlign === 'right') headlineX = targetWidth * 0.92;
 
-  const headlineLines = (textConfig.headlineText || 'App Headline').split('\n');
-  const lineHeight = headlineFontSize * 1.22;
+  const lineHeight = headlineFontSize * 1.18;
 
   for (const line of headlineLines) {
     ctx.fillText(line, headlineX, currentY);
@@ -333,12 +349,12 @@ export async function renderSlideToCanvas(
 
   // 5. Draw Subtitle
   if (textConfig.showSubtitle && textConfig.subtitleText) {
-    currentY += 12 * fontMultiplier;
+    currentY += Math.round(14 * fontMultiplier);
     ctx.save();
-    const subtitleFontSize = Math.round((textConfig.subtitleSize || 18) * 2.0 * fontMultiplier);
+    const subtitleFontSize = Math.round((textConfig.subtitleSize || 19) * 2.65 * fontMultiplier);
     ctx.font = `500 ${subtitleFontSize}px "${textConfig.fontFamily}", "Noto Sans TC", sans-serif`;
     ctx.fillStyle = textConfig.subtitleColor || '#94a3b8';
-    ctx.globalAlpha = textConfig.subtitleOpacity ?? 0.9;
+    ctx.globalAlpha = textConfig.subtitleOpacity ?? 0.92;
     ctx.textAlign = textConfig.headlineAlign;
     ctx.textBaseline = 'top';
 
@@ -349,16 +365,16 @@ export async function renderSlideToCanvas(
     const subLines = textConfig.subtitleText.split('\n');
     for (const subLine of subLines) {
       ctx.fillText(subLine, subX, currentY);
-      currentY += subtitleFontSize * 1.35;
+      currentY += subtitleFontSize * 1.34;
     }
     ctx.restore();
   }
 
   // 6. Draw Star Rating if enabled
   if (textConfig.showRatingStars) {
-    currentY += 14 * fontMultiplier;
+    currentY += Math.round(14 * fontMultiplier);
     ctx.save();
-    const starFontSize = Math.round(28 * fontMultiplier);
+    const starFontSize = Math.round(36 * fontMultiplier);
     const starText = '★★★★★';
     ctx.font = `bold ${starFontSize}px sans-serif`;
     ctx.fillStyle = '#fbbf24';
@@ -372,21 +388,28 @@ export async function renderSlideToCanvas(
     ctx.fillText(starText, starX, currentY);
 
     if (textConfig.ratingCountText) {
-      ctx.font = `500 ${Math.round(22 * fontMultiplier)}px "${textConfig.fontFamily}", sans-serif`;
+      ctx.font = `500 ${Math.round(28 * fontMultiplier)}px "${textConfig.fontFamily}", sans-serif`;
       ctx.fillStyle = '#cbd5e1';
       const starsWidth = ctx.measureText(starText).width;
       if (textConfig.headlineAlign === 'center') {
-        ctx.fillText(` ${textConfig.ratingCountText}`, starX + starsWidth / 2 + 10, currentY + 3);
+        ctx.fillText(` ${textConfig.ratingCountText}`, starX + starsWidth / 2 + 14 * fontMultiplier, currentY + 4);
       }
     }
     ctx.restore();
+    currentY += starFontSize + Math.round(12 * fontMultiplier);
   }
+
+  // Record bottom edge of the text header section
+  const textBottomY = currentY;
 
   // 7. Load and Render Screenshot inside realistic Mockup frame
   if (slide.screenshotUrl) {
     try {
       const img = await loadImage(slide.screenshotUrl);
       const isWatchDevice = deviceConfig.deviceType.startsWith('apple-watch');
+
+      const bottomSafeMargin = targetHeight * 0.045;
+      const availableHeroHeight = targetHeight - bottomSafeMargin - textBottomY;
 
       if (layout === 'watch-focus' || isWatchDevice) {
         // Render Apple Watch Centered Focus
@@ -396,32 +419,59 @@ export async function renderSlideToCanvas(
           fontMultiplier,
           deviceConfig,
           isTextTop,
-          scale: (deviceConfig.scale || 1.0) * 1.15,
-          offsetX: deviceConfig.offsetX,
-          offsetY: deviceConfig.offsetY,
+          textBottomY,
+          scale: (deviceConfig.scale || 1.0) * 0.95,
+          offsetX: deviceConfig.offsetX || 0,
+          offsetY: deviceConfig.offsetY || 0,
           rotateZ: deviceConfig.rotateZ || 0,
         });
       } else if (layout === 'phone-with-watch') {
-        // Dual Device: iPhone shifted left + Apple Watch on bottom right
-        // 1. Draw Phone slightly to the left
-        const phoneScale = (deviceConfig.scale || 1.0) * 0.92;
+        // Dual Device: iPhone on left + Apple Watch on bottom right with perfect store-grade visual balance
+        const phoneScale = (deviceConfig.scale || 1.0);
+        let phoneWidth = targetWidth * 0.70 * phoneScale;
+        let phoneHeight = phoneWidth * 2.155;
+
+        // Auto-fit protection: never cut off from top text
+        const bottomMargin = Math.round(targetHeight * 0.035);
+        const maxAvailablePhoneHeight = targetHeight - bottomMargin - textBottomY - 25 * fontMultiplier;
+        if (phoneHeight > maxAvailablePhoneHeight) {
+          const fitFactor = maxAvailablePhoneHeight / phoneHeight;
+          phoneWidth *= fitFactor;
+          phoneHeight = maxAvailablePhoneHeight;
+        }
+
+        let phoneBaseY = targetHeight - bottomMargin - phoneHeight;
+        if (phoneBaseY < textBottomY + 20 * fontMultiplier) {
+          phoneBaseY = textBottomY + 20 * fontMultiplier;
+        }
+        phoneBaseY += ((deviceConfig.offsetY || 0) / 100) * targetHeight;
+
+        // 1. Draw Phone shifted slightly left, angled naturally
         await drawPhoneOnCanvas(ctx, img, {
           targetWidth,
           targetHeight,
           fontMultiplier,
           deviceConfig,
           isTextTop,
+          textBottomY,
           scale: phoneScale,
-          offsetX: (deviceConfig.offsetX || 0) - 14,
-          offsetY: (deviceConfig.offsetY || 0) + 2,
-          rotateZ: -3,
+          customWidth: phoneWidth,
+          customBaseY: phoneBaseY,
+          offsetX: (deviceConfig.offsetX || 0) - 7,
+          offsetY: 0,
+          rotateZ: -2.5,
           spec,
         });
 
-        // 2. Draw Watch on bottom right overlapping
+        // 2. Draw Watch in the bottom-right corner overlapping cleanly
         const watchImg = slide.secondaryScreenshotUrl
           ? await loadImage(slide.secondaryScreenshotUrl)
           : img;
+
+        let watchWidth = targetWidth * 0.36 * (deviceConfig.scale || 1.0);
+        let watchHeight = watchWidth * 1.22;
+        let watchIdealY = targetHeight - bottomMargin - watchHeight - 15 * fontMultiplier;
+        watchIdealY += ((deviceConfig.offsetY || 0) / 100) * targetHeight;
 
         await drawWatchOnCanvas(ctx, watchImg, {
           targetWidth,
@@ -435,10 +485,70 @@ export async function renderSlideToCanvas(
             watchBandColor: deviceConfig.watchBandColor || '#f97316',
           },
           isTextTop,
-          scale: phoneScale * 0.65,
-          offsetX: 30,
-          offsetY: 28,
-          rotateZ: 6,
+          textBottomY,
+          scale: 1.0,
+          customWidth: watchWidth,
+          customBaseY: watchIdealY,
+          offsetX: (deviceConfig.offsetX || 0) + 21,
+          offsetY: 0,
+          rotateZ: 4.5,
+        });
+      } else if (layout === 'dual-devices') {
+        // Dual phone showcase: overlapping phones filling canvas
+        const baseScale = (deviceConfig.scale || 1.0);
+        let phoneWidth = targetWidth * 0.65 * baseScale;
+        let phoneHeight = phoneWidth * 2.155;
+
+        const bottomMargin = Math.round(targetHeight * 0.035);
+        const maxAvailableHeight = targetHeight - bottomMargin - textBottomY - 25 * fontMultiplier;
+        if (phoneHeight > maxAvailableHeight) {
+          const fitFactor = maxAvailableHeight / phoneHeight;
+          phoneWidth *= fitFactor;
+          phoneHeight = maxAvailableHeight;
+        }
+
+        let baseFrameY = targetHeight - bottomMargin - phoneHeight;
+        if (baseFrameY < textBottomY + 20 * fontMultiplier) {
+          baseFrameY = textBottomY + 20 * fontMultiplier;
+        }
+        baseFrameY += ((deviceConfig.offsetY || 0) / 100) * targetHeight;
+
+        const secondaryImg = slide.secondaryScreenshotUrl
+          ? await loadImage(slide.secondaryScreenshotUrl)
+          : img;
+
+        // 1. Back phone (shifted left, rotated -7 deg)
+        await drawPhoneOnCanvas(ctx, secondaryImg, {
+          targetWidth,
+          targetHeight,
+          fontMultiplier,
+          deviceConfig,
+          isTextTop,
+          textBottomY,
+          scale: baseScale,
+          customWidth: phoneWidth * 0.94,
+          customBaseY: baseFrameY + 30 * fontMultiplier,
+          offsetX: (deviceConfig.offsetX || 0) - 12,
+          offsetY: 0,
+          rotateZ: -7,
+          spec,
+        });
+
+        // 2. Front phone (shifted right, rotated 4 deg)
+        await drawPhoneOnCanvas(ctx, img, {
+          targetWidth,
+          targetHeight,
+          fontMultiplier,
+          deviceConfig,
+          isTextTop,
+          textBottomY,
+          scale: baseScale,
+          customWidth: phoneWidth,
+          customBaseY: baseFrameY,
+          offsetX: (deviceConfig.offsetX || 0) + 11,
+          offsetY: 0,
+          rotateZ: 4,
+          spec,
         });
       } else {
         // Standard Phone / Tablet / Android
@@ -448,6 +558,7 @@ export async function renderSlideToCanvas(
           fontMultiplier,
           deviceConfig,
           isTextTop,
+          textBottomY,
           scale: deviceConfig.scale || 1.0,
           offsetX: deviceConfig.offsetX || 0,
           offsetY: deviceConfig.offsetY || 0,
@@ -469,11 +580,14 @@ interface DrawPhoneOptions {
   fontMultiplier: number;
   deviceConfig: any;
   isTextTop: boolean;
+  textBottomY?: number;
   scale: number;
   offsetX: number;
   offsetY: number;
   rotateZ: number;
   spec: AppStoreSpec;
+  customWidth?: number;
+  customBaseY?: number;
 }
 
 async function drawPhoneOnCanvas(
@@ -481,7 +595,7 @@ async function drawPhoneOnCanvas(
   img: HTMLImageElement,
   options: DrawPhoneOptions
 ) {
-  const { targetWidth, targetHeight, fontMultiplier, deviceConfig, isTextTop, scale, offsetX, offsetY, rotateZ, spec } = options;
+  const { targetWidth, targetHeight, fontMultiplier, deviceConfig, isTextTop, textBottomY, scale, offsetX, offsetY, rotateZ, spec, customWidth, customBaseY } = options;
 
   const isTablet = spec.category === 'iPad' || spec.category === 'Android Tablet';
   const deviceType = deviceConfig.deviceType || 'iphone-16-pro-max';
@@ -495,19 +609,60 @@ async function drawPhoneOnCanvas(
     deviceType.startsWith('oneplus') ||
     deviceType.startsWith('android');
 
-  const frameWidth = isTablet
-    ? targetWidth * 0.82 * scale
-    : targetWidth * 0.78 * scale;
+  let frameWidth = customWidth
+    ? customWidth
+    : isTablet
+    ? targetWidth * 0.80 * scale
+    : targetWidth * 0.75 * scale;
 
-  const frameRatio = isTablet ? 1.33 : isGalaxyUltra ? 2.16 : isHomeButton ? 1.77 : 2.16;
-  const frameHeight = frameWidth * frameRatio;
+  const frameRatio = isTablet ? 1.33 : isGalaxyUltra ? 2.155 : isHomeButton ? 1.77 : 2.155;
+  let frameHeight = frameWidth * frameRatio;
+
+  const bottomSafeMargin = Math.round(targetHeight * 0.035);
+  const textEndY = textBottomY || targetHeight * 0.22;
+  const availableHeight = targetHeight - bottomSafeMargin - textEndY;
+
+  // 🛡️ Auto-Fit Protection: If device height exceeds available space, scale down proportionally to fit 100% inside screen
+  if (isTextTop && frameHeight > availableHeight - 20 * fontMultiplier) {
+    const fitFactor = (availableHeight - 20 * fontMultiplier) / frameHeight;
+    frameWidth *= fitFactor;
+    frameHeight *= fitFactor;
+  }
 
   const deviceCenterX = targetWidth / 2 + (offsetX / 100) * targetWidth;
-  const deviceBaseY = isTextTop
-    ? targetHeight * 0.35 + (offsetY / 100) * targetHeight
-    : targetHeight * 0.08 + (offsetY / 100) * targetHeight;
 
-  const frameX = deviceCenterX - frameWidth / 2;
+  let deviceBaseY: number;
+  if (customBaseY !== undefined) {
+    deviceBaseY = customBaseY;
+  } else if (isTextTop) {
+    // Anchor device gracefully to the bottom so device fills the lower screen with prominent presence
+    deviceBaseY = targetHeight - bottomSafeMargin - frameHeight + ((offsetY || 0) / 100) * targetHeight;
+    if (deviceBaseY < textEndY + 15 * fontMultiplier) {
+      deviceBaseY = textEndY + 15 * fontMultiplier;
+    }
+  } else {
+    deviceBaseY = targetHeight * 0.05 + ((offsetY || 0) / 100) * targetHeight;
+  }
+
+  // Clamping Y: prevent bottom cut-off
+  const minDeviceY = textEndY + 15 * fontMultiplier;
+  const maxDeviceBottom = targetHeight - Math.round(targetHeight * 0.025);
+  if (deviceBaseY < minDeviceY) {
+    deviceBaseY = minDeviceY;
+  }
+  if (deviceBaseY + frameHeight > maxDeviceBottom) {
+    deviceBaseY = maxDeviceBottom - frameHeight;
+  }
+
+  // Clamping X: prevent side cut-off
+  const sideSafeMargin = Math.round(targetWidth * 0.025);
+  let frameX = deviceCenterX - frameWidth / 2;
+  if (frameX < sideSafeMargin) {
+    frameX = sideSafeMargin;
+  } else if (frameX + frameWidth > targetWidth - sideSafeMargin) {
+    frameX = targetWidth - sideSafeMargin - frameWidth;
+  }
+
   const frameY = deviceBaseY;
 
   ctx.save();
@@ -569,8 +724,49 @@ async function drawPhoneOnCanvas(
   ctx.roundRect(screenX, screenY, screenW, screenH, innerRadius);
   ctx.clip();
 
-  // Draw user screenshot
-  ctx.drawImage(img, screenX, screenY, screenW, screenH);
+  // Draw user screenshot with aspect-ratio preservation or 100% zero-cut contain
+  const imgAspect = img.width / (img.height || 1);
+  const screenAspect = screenW / (screenH || 1);
+  const screenshotFit = deviceConfig.screenshotFit || 'cover';
+  const screenshotScale = deviceConfig.screenshotScale || 1.0;
+
+  if (screenshotFit === 'contain') {
+    // 100% Zero-cut containment: entire UI visible without cropping any edge
+    let drawW = screenW * screenshotScale;
+    let drawH = (screenW / imgAspect) * screenshotScale;
+    if (drawH > screenH * screenshotScale) {
+      drawH = screenH * screenshotScale;
+      drawW = (screenH * imgAspect) * screenshotScale;
+    }
+    const drawX = screenX + (screenW - drawW) / 2;
+    const drawY = screenY + (screenH - drawH) / 2;
+    ctx.drawImage(img, 0, 0, img.width, img.height, drawX, drawY, drawW, drawH);
+  } else {
+    let srcX = 0;
+    let srcY = 0;
+    let srcW = img.width;
+    let srcH = img.height;
+
+    if (Math.abs(imgAspect - screenAspect) > 0.05) {
+      if (imgAspect > screenAspect) {
+        srcW = img.height * screenAspect;
+        srcX = (img.width - srcW) / 2;
+      } else {
+        srcH = img.width / screenAspect;
+        srcY = 0; // Anchor to top to keep app header / navigation visible
+      }
+    }
+
+    if (screenshotScale !== 1) {
+      const scaledW = screenW * screenshotScale;
+      const scaledH = screenH * screenshotScale;
+      const scaledX = screenX + (screenW - scaledW) / 2;
+      const scaledY = screenY + (screenH - scaledH) / 2;
+      ctx.drawImage(img, srcX, srcY, srcW, srcH, scaledX, scaledY, scaledW, scaledH);
+    } else {
+      ctx.drawImage(img, srcX, srcY, srcW, srcH, screenX, screenY, screenW, screenH);
+    }
+  }
 
   // Dynamic Island / Punch Hole / Notch
   if (!isTablet && !isHomeButton) {
@@ -667,10 +863,13 @@ interface DrawWatchOptions {
   fontMultiplier: number;
   deviceConfig: any;
   isTextTop: boolean;
+  textBottomY?: number;
   scale: number;
   offsetX: number;
   offsetY: number;
   rotateZ: number;
+  customWidth?: number;
+  customBaseY?: number;
 }
 
 async function drawWatchOnCanvas(
@@ -678,18 +877,36 @@ async function drawWatchOnCanvas(
   img: HTMLImageElement,
   options: DrawWatchOptions
 ) {
-  const { targetWidth, targetHeight, fontMultiplier, deviceConfig, isTextTop, scale, offsetX, offsetY, rotateZ } = options;
+  const { targetWidth, targetHeight, fontMultiplier, deviceConfig, isTextTop, textBottomY, scale, offsetX, offsetY, rotateZ, customWidth, customBaseY } = options;
 
   const isUltra = deviceConfig.deviceType === 'apple-watch-ultra-2';
-  const watchWidth = targetWidth * 0.54 * scale;
+  const watchWidth = customWidth || targetWidth * 0.48 * scale;
   const watchHeight = watchWidth * (isUltra ? 1.22 : 1.24);
 
   const centerX = targetWidth / 2 + (offsetX / 100) * targetWidth;
-  const baseY = isTextTop
-    ? targetHeight * 0.42 + (offsetY / 100) * targetHeight
-    : targetHeight * 0.16 + (offsetY / 100) * targetHeight;
 
-  const x = centerX - watchWidth / 2;
+  let baseY: number;
+  if (customBaseY !== undefined) {
+    baseY = customBaseY;
+  } else if (isTextTop) {
+    const textEndY = textBottomY || targetHeight * 0.26;
+    const bottomSafeMargin = Math.round(targetHeight * 0.04);
+    // Anchor watch gracefully towards bottom
+    baseY = targetHeight - bottomSafeMargin - watchHeight + ((offsetY || 0) / 100) * targetHeight;
+    if (baseY < textEndY + 15 * fontMultiplier) {
+      baseY = textEndY + 15 * fontMultiplier;
+    }
+  } else {
+    baseY = targetHeight * 0.14 + ((offsetY || 0) / 100) * targetHeight;
+  }
+
+  // Clamping watch Y so neither watch nor strap spills off-screen
+  const maxWatchBottom = targetHeight - Math.round(targetHeight * 0.035);
+  if (baseY + watchHeight > maxWatchBottom) {
+    baseY = maxWatchBottom - watchHeight;
+  }
+
+  const x = Math.max(Math.round(targetWidth * 0.04), Math.min(centerX - watchWidth / 2, targetWidth - watchWidth - Math.round(targetWidth * 0.04)));
   const y = baseY;
 
   ctx.save();
@@ -700,52 +917,41 @@ async function drawWatchOnCanvas(
     ctx.translate(-centerX, -(y + watchHeight / 2));
   }
 
-  // 1. Draw Watch Straps (top & bottom)
+  // 1. Draw Watch Straps (sleek, compact, high-end design)
   const bandType = deviceConfig.watchBandType || 'ocean-band';
   const bandColor = deviceConfig.watchBandColor || '#f97316';
 
   if (bandType !== 'none') {
-    const bandW = watchWidth * 0.64;
+    const bandW = watchWidth * 0.62;
     const bandX = centerX - bandW / 2;
-    const strapLength = watchHeight * 0.38;
+    const strapLength = watchHeight * 0.16;
 
     // Top Strap
     ctx.save();
     ctx.fillStyle = bandColor;
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-    ctx.shadowBlur = 20 * fontMultiplier;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
+    ctx.shadowBlur = 16 * fontMultiplier;
     ctx.beginPath();
-    ctx.roundRect(bandX, y - strapLength + 15, bandW, strapLength, [18 * fontMultiplier, 18 * fontMultiplier, 0, 0]);
+    ctx.roundRect(bandX, y - strapLength + 12, bandW, strapLength, [12 * fontMultiplier, 12 * fontMultiplier, 0, 0]);
     ctx.fill();
 
-    // Ocean band ridges or texture
-    if (bandType === 'ocean-band') {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-      for (let ridgeY = y - strapLength + 25; ridgeY < y; ridgeY += 22 * fontMultiplier) {
-        ctx.beginPath();
-        ctx.roundRect(bandX + 8, ridgeY, bandW - 16, 8 * fontMultiplier, 4);
-        ctx.fill();
-      }
-    }
+    // Subtle metallic connector lug
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.fillRect(bandX + 4, y - 4, bandW - 8, 3 * fontMultiplier);
     ctx.restore();
 
     // Bottom Strap
     ctx.save();
     ctx.fillStyle = bandColor;
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-    ctx.shadowBlur = 20 * fontMultiplier;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
+    ctx.shadowBlur = 16 * fontMultiplier;
     ctx.beginPath();
-    ctx.roundRect(bandX, y + watchHeight - 15, bandW, strapLength, [0, 0, 18 * fontMultiplier, 18 * fontMultiplier]);
+    ctx.roundRect(bandX, y + watchHeight - 12, bandW, strapLength, [0, 0, 12 * fontMultiplier, 12 * fontMultiplier]);
     ctx.fill();
 
-    if (bandType === 'ocean-band') {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-      for (let ridgeY = y + watchHeight + 5; ridgeY < y + watchHeight + strapLength - 15; ridgeY += 22 * fontMultiplier) {
-        ctx.beginPath();
-        ctx.roundRect(bandX + 8, ridgeY, bandW - 16, 8 * fontMultiplier, 4);
-        ctx.fill();
-      }
-    }
+    // Subtle metallic connector lug
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.fillRect(bandX + 4, y + watchHeight + 1, bandW - 8, 3 * fontMultiplier);
     ctx.restore();
   }
 
@@ -817,8 +1023,30 @@ async function drawWatchOnCanvas(
   ctx.fillStyle = '#000000';
   ctx.fillRect(screenX, screenY, screenW, screenH);
 
-  // Draw user screenshot
-  ctx.drawImage(img, screenX, screenY, screenW, screenH);
+  // Draw user screenshot with fit
+  const watchFit = deviceConfig.screenshotFit || 'cover';
+  const watchScale = deviceConfig.screenshotScale || 1.0;
+
+  if (watchFit === 'contain') {
+    const watchImgAspect = img.width / (img.height || 1);
+    let drawW = screenW * watchScale;
+    let drawH = (screenW / watchImgAspect) * watchScale;
+    if (drawH > screenH * watchScale) {
+      drawH = screenH * watchScale;
+      drawW = (screenH * watchImgAspect) * watchScale;
+    }
+    const drawX = screenX + (screenW - drawW) / 2;
+    const drawY = screenY + (screenH - drawH) / 2;
+    ctx.drawImage(img, 0, 0, img.width, img.height, drawX, drawY, drawW, drawH);
+  } else if (watchScale !== 1) {
+    const scaledW = screenW * watchScale;
+    const scaledH = screenH * watchScale;
+    const scaledX = screenX + (screenW - scaledW) / 2;
+    const scaledY = screenY + (screenH - scaledH) / 2;
+    ctx.drawImage(img, scaledX, scaledY, scaledW, scaledH);
+  } else {
+    ctx.drawImage(img, screenX, screenY, screenW, screenH);
+  }
 
   // Watch Screen Glare
   if (deviceConfig.glareEffect) {

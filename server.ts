@@ -31,6 +31,46 @@ function getGeminiClient(): GoogleGenAI {
   });
 }
 
+// Resilient Gemini generator with automatic fallback across models when experiencing 503 high demand
+async function generateGeminiContentWithFallback(
+  ai: GoogleGenAI,
+  requestOptions: {
+    contents: string;
+    config: any;
+    preferredModel?: string;
+  }
+) {
+  // Use recommended gemini-2.5-flash first, fallback to gemini-2.0-flash then gemini-3.7-flash
+  const modelsToTry = [
+    requestOptions.preferredModel || 'gemini-2.5-flash',
+    'gemini-2.0-flash',
+    'gemini-3.7-flash',
+  ];
+
+  let lastError: any = null;
+  for (const model of modelsToTry) {
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents: requestOptions.contents,
+        config: requestOptions.config,
+      });
+      if (response && response.text) {
+        return response;
+      }
+    } catch (err: any) {
+      lastError = err;
+      const status = err.status || (err.error && err.error.code);
+      const isUnavailable = status === 503 || status === 429 || (err.message && err.message.includes('503'));
+      console.warn(`[Gemini API] Model ${model} returned code ${status || 'err'}, attempting next fallback...`);
+      if (!isUnavailable) {
+        break;
+      }
+    }
+  }
+  throw lastError;
+}
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -71,8 +111,7 @@ Guidelines for App Store Screenshots:
 6. Provide an ASO conversion rationale explaining why this copy converts visitors into downloads.
 `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.7-flash',
+    const response = await generateGeminiContentWithFallback(ai, {
       contents: prompt,
       config: {
         systemInstruction:
@@ -110,10 +149,11 @@ Guidelines for App Store Screenshots:
     const parsed = JSON.parse(text);
     res.json({ success: true, data: parsed });
   } catch (error: any) {
-    console.error('Error generating deck copy:', error);
-    res.status(500).json({
+    console.warn('[Deck Copy] Gemini service unavailable, responding with offline fallback instructions:', error.message);
+    res.status(200).json({
       success: false,
-      error: error.message || 'Failed to generate copy suggestions',
+      fallbackToOffline: true,
+      error: error.message || 'Gemini service temporarily busy',
     });
   }
 });
@@ -149,8 +189,7 @@ Generate 4 variations with different psychological angles:
 4. "Social Proof & Superlative" (Trust, top-rated, industry standard)
 `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.7-flash',
+    const response = await generateGeminiContentWithFallback(ai, {
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
@@ -181,10 +220,11 @@ Generate 4 variations with different psychological angles:
     const parsed = JSON.parse(text);
     res.json({ success: true, data: parsed });
   } catch (error: any) {
-    console.error('Error suggesting variations:', error);
-    res.status(500).json({
+    console.warn('[Variations] Gemini service unavailable, responding with offline fallback instructions:', error.message);
+    res.status(200).json({
       success: false,
-      error: error.message || 'Failed to generate copy variations',
+      fallbackToOffline: true,
+      error: error.message || 'Gemini service temporarily busy',
     });
   }
 });
@@ -206,8 +246,7 @@ ${JSON.stringify(slides, null, 2)}
 Target Languages: ${targetLanguages.join(', ')}
 `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.7-flash',
+    const response = await generateGeminiContentWithFallback(ai, {
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
@@ -248,10 +287,11 @@ Target Languages: ${targetLanguages.join(', ')}
     const parsed = JSON.parse(text);
     res.json({ success: true, data: parsed });
   } catch (error: any) {
-    console.error('Error localizing copy:', error);
-    res.status(500).json({
+    console.warn('[Localize] Gemini service unavailable, responding with offline fallback instructions:', error.message);
+    res.status(200).json({
       success: false,
-      error: error.message || 'Failed to localize copy',
+      fallbackToOffline: true,
+      error: error.message || 'Gemini service temporarily busy',
     });
   }
 });

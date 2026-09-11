@@ -57,7 +57,7 @@ export const SlideThumbnailDeck: React.FC<SlideThumbnailDeckProps> = ({
                   <ScreenshotRenderer
                     slide={slide}
                     zoom={0.14}
-                    className="border-0 shadow-none"
+                    className="border-0 shadow-none rounded-none"
                   />
                 </div>
 
