@@ -38,7 +38,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const [targetStoreTab, setTargetStoreTab] = useState<TargetStore>('universal');
   // Selected specs
   const [selectedSpecIds, setSelectedSpecIds] = useState<string[]>([
-    'iphone-6.7-6.9',
+    'iphone-6.9-1320x2868',
+    'iphone-6.9-1260x2736',
+    'iphone-6.7-1284x2778',
+    'iphone-6.5-1242x2688',
     'ipad-13',
     'apple-watch-ultra',
     'google-play-phone',
@@ -313,11 +316,12 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                         e.stopPropagation();
                         handleExportSingle(spec);
                       }}
-                      title={t.quickSingleDownload}
+                      title={language === 'en' ? `Download single slide as ${exportFormat.toUpperCase()}` : `下載此規格單張 ${exportFormat.toUpperCase()} 圖檔`}
                       disabled={isExporting}
-                      className="p-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-neutral-300 hover:text-white transition-colors cursor-pointer border border-white/[0.04]"
+                      className="px-2.5 py-1.5 rounded-xl bg-white/[0.08] hover:bg-blue-600/30 hover:border-blue-500/50 text-neutral-200 hover:text-white transition-all cursor-pointer border border-white/[0.06] flex items-center gap-1.5 text-xs font-semibold"
                     >
-                      <Download className="w-3.5 h-3.5" />
+                      <Download className="w-3.5 h-3.5 text-blue-400" />
+                      <span>{exportFormat.toUpperCase()}</span>
                     </button>
 
                     <input
@@ -420,7 +424,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({
               className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold shadow-lg shadow-blue-950/50 flex items-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               <Archive className="w-4 h-4" />
-              {t.downloadZip}
+              <span>
+                {language === 'en'
+                  ? `Download All ${exportFormat.toUpperCase()} (ZIP)`
+                  : `下載全部 ${exportFormat.toUpperCase()} (ZIP 打包)`}
+              </span>
             </button>
           </div>
         </div>

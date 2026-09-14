@@ -16,7 +16,9 @@ import {
   importProjectFromJsonFile,
   StoredProjectData,
 } from './utils/projectStorage';
-import { Sparkles, Layers, Maximize2, Plus, CheckCircle2, X } from 'lucide-react';
+import { renderSlideToCanvas, downloadCanvas } from './utils/exportEngine';
+import { APP_STORE_SPECS } from './data/presets';
+import { Sparkles, Layers, Maximize2, Plus, CheckCircle2, X, Download } from 'lucide-react';
 
 function AppContent() {
   const { t, language } = useLanguage();
@@ -215,6 +217,27 @@ function AppContent() {
       setSaveStatus('saved');
       setRestoredBanner(t.resetProjectSuccess);
       setTimeout(() => setRestoredBanner(null), 3000);
+    }
+  };
+
+  // Quick download current slide as PNG (defaults to official ASC 6.9" 1320x2868)
+  const [selectedPhoneSpecId, setSelectedPhoneSpecId] = useState<string>('iphone-6.9-1320x2868');
+  const [isQuickDownloading, setIsQuickDownloading] = useState(false);
+
+  const activeDownloadSpec = isTabletView
+    ? APP_STORE_SPECS.find((s) => s.id === 'ipad-13') || APP_STORE_SPECS[8]
+    : APP_STORE_SPECS.find((s) => s.id === selectedPhoneSpecId) || APP_STORE_SPECS[0];
+
+  const handleQuickDownloadPng = async () => {
+    try {
+      setIsQuickDownloading(true);
+      const canvas = await renderSlideToCanvas(currentSlide, activeDownloadSpec, 1.0);
+      const filename = `AppStore_Screenshot_${activeSlideIndex + 1}_${activeDownloadSpec.width}x${activeDownloadSpec.height}.png`;
+      downloadCanvas(canvas, filename, 'png');
+    } catch (e) {
+      console.error('Quick download failed:', e);
+    } finally {
+      setIsQuickDownloading(false);
     }
   };
 
@@ -476,16 +499,49 @@ function AppContent() {
                 isTabletView={isTabletView}
               />
 
-              {/* Resolution Label Tag */}
-              <div className="mt-4 px-4 py-1.5 rounded-full bg-[#0E0E12]/90 border border-white/[0.08] text-[11px] text-neutral-300 font-mono flex items-center gap-2.5 shadow-xl backdrop-blur-md">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-xs shadow-emerald-400/50" />
-                <span className="font-semibold">
-                  {isTabletView ? 'iPad Pro 13" (2048 × 2732 px)' : 'iPhone 6.9" / 6.7" (1290 × 2796 px)'}
-                </span>
-                <span className="text-white/20">|</span>
-                <span className="text-neutral-400">
-                  {language === 'en' ? 'Live High-Fidelity Rendering' : '即時高保真算圖'}
-                </span>
+              {/* Resolution Label & Quick PNG Download Bar */}
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                {!isTabletView ? (
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#0E0E12]/90 border border-white/[0.08] text-[11px] font-mono shadow-xl backdrop-blur-md">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-xs shadow-emerald-400/50" />
+                    <span className="text-neutral-400 text-[10px]">ASC 官方規格:</span>
+                    <select
+                      value={selectedPhoneSpecId}
+                      onChange={(e) => setSelectedPhoneSpecId(e.target.value)}
+                      aria-label="App Store Connect iPhone Resolution"
+                      className="bg-[#181822] text-white border border-white/[0.14] rounded-lg px-2 py-0.5 text-xs font-semibold focus:outline-hidden focus:border-blue-500 cursor-pointer"
+                    >
+                      <option value="iphone-6.9-1320x2868">iPhone 6.9" (1320 × 2868 px) - ASC 官方推薦</option>
+                      <option value="iphone-6.9-1260x2736">iPhone 6.9" (1260 × 2736 px) - ASC 官方要求</option>
+                      <option value="iphone-6.7-1284x2778">iPhone 6.7" / 6.5" (1284 × 2778 px)</option>
+                      <option value="iphone-6.5-1242x2688">iPhone 6.5" (1242 × 2688 px)</option>
+                      <option value="iphone-6.7-1290x2796">iPhone 6.7" (1290 × 2796 px)</option>
+                    </select>
+                  </div>
+                ) : (
+                  <div className="px-4 py-1.5 rounded-full bg-[#0E0E12]/90 border border-white/[0.08] text-[11px] text-neutral-300 font-mono flex items-center gap-2.5 shadow-xl backdrop-blur-md">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-xs shadow-emerald-400/50" />
+                    <span className="font-semibold text-white">iPad Pro 13" (2048 × 2732 px)</span>
+                    <span className="text-white/20">|</span>
+                    <span className="text-neutral-400">Apple Store Standard</span>
+                  </div>
+                )}
+
+                {/* Direct 1-Click PNG Download Button */}
+                <button
+                  type="button"
+                  onClick={handleQuickDownloadPng}
+                  disabled={isQuickDownloading}
+                  title={language === 'en' ? `Download this slide as ${activeDownloadSpec.width} × ${activeDownloadSpec.height} PNG` : `立即以 ${activeDownloadSpec.width} × ${activeDownloadSpec.height} 下載此張 PNG`}
+                  className="px-3.5 py-1.5 rounded-full bg-blue-600/30 hover:bg-blue-600/50 border border-blue-500/50 hover:border-blue-400 text-blue-200 hover:text-white text-[11px] font-semibold flex items-center gap-1.5 transition-all shadow-lg shadow-blue-950/50 cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5 text-blue-400" />
+                  <span>
+                    {isQuickDownloading
+                      ? (language === 'en' ? 'Exporting...' : '算圖中...')
+                      : (language === 'en' ? `Download ${activeDownloadSpec.width}×${activeDownloadSpec.height} PNG` : `下載 ${activeDownloadSpec.width}×${activeDownloadSpec.height} PNG`)}
+                  </span>
+                </button>
               </div>
             </div>
           )}

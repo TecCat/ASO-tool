@@ -1201,13 +1201,15 @@ export async function batchExportZip(
 --------------------------------------------------------------------------------
 🍎 1. Apple App Store 提交規格說明
 --------------------------------------------------------------------------------
-1. iPhone 6.9" / 6.7" (1290 x 2796):
-   - 必填 (Required)。適用於 iPhone 16 Pro Max, 15 Pro Max, 14 Pro Max。
-2. iPhone 6.3" / 6.1" (1179 x 2556):
+1. iPhone 6.9" (1320 x 2868 或 1260 x 2736):
+   - Apple ASC 官方 6.9 吋標準規格。適用於 iPhone 16 Pro Max。
+2. iPhone 6.7" / 6.5" (1284 x 2778 或 1242 x 2688):
+   - Apple ASC 官方核心必填規格。適用於 iPhone 14/13/12 Pro Max, Plus, 11 Pro Max, XS Max。
+3. iPhone 6.3" / 6.1" (1179 x 2556):
    - 推薦上傳。適用於 iPhone 16 Pro, 15 Pro, 14 Pro。
-3. iPhone 5.5" (1242 x 2208):
+4. iPhone 5.5" (1242 x 2208):
    - 適用於舊款 16:9 機型 (iPhone 8 Plus, 7 Plus, SE)。
-4. iPad Pro 13" / 12.9" (2048 x 2732):
+5. iPad Pro 13" / 12.9" (2048 x 2732):
    - 若您的 App 支援 iPad，則此解析度為必填項目。
 5. 顏色空間規範: sRGB 或 Display P3。
 6. 檔案格式: 72 dpi, RGB, 平坦化 (Flattened), 無透明度的 PNG 或 高品質 JPEG。
